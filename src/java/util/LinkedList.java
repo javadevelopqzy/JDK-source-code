@@ -44,7 +44,7 @@ import java.util.function.Consumer;
  * an element is not a structural modification.)  This is typically
  * accomplished by synchronizing on some object that naturally
  * encapsulates the list.
- *
+ * <p>
  * If no such object exists, the list should be "wrapped" using the
  * {@link Collections#synchronizedList Collections.synchronizedList}
  * method.  This is best done at creation time, to prevent accidental
@@ -73,1192 +73,1149 @@ import java.util.function.Consumer;
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
  *
- * @author  Josh Bloch
- * @see     List
- * @see     ArrayList
- * @since 1.2
  * @param <E> the type of elements held in this collection
+ * @author Josh Bloch
+ * @see List
+ * @see ArrayList
+ * @since 1.2
  */
 
 public class LinkedList<E>
-    extends AbstractSequentialList<E>
-    implements List<E>, Deque<E>, Cloneable, java.io.Serializable
-{
-    /**
-     * 记录当前容器的最大索引
-     */
-    transient int size = 0;
-
-    /**
-     * 头结点
-     */
-    transient Node<E> first;
-
-    /**
-     * 尾节点
-     */
-    transient Node<E> last;
-
-    /**
-     * 空构造函数
-     */
-    public LinkedList() {
-    }
-
-    /**
-     * 创建一个含有集合c的链表类
-     *
-     * @param  c 传入的集合
-     * @throws NullPointerException 集合为空抛出此异常
-     */
-    public LinkedList(Collection<? extends E> c) {
-        this();
-        addAll(c);
-    }
-
-    /**
-     * 把元素插入到头结点
-     */
-    private void linkFirst(E e) {
-        final Node<E> f = first;
-        final Node<E> newNode = new Node<>(null, e, f);
-        first = newNode;
-        // 原头结点是空，说明新的节点既是头也是尾
-        if (f == null)
-            last = newNode;
-        else
-            f.prev = newNode;
-        size++;
-        modCount++;
-    }
-
-    /**
-     * 在尾节点插入元素
-     */
-    void linkLast(E e) {
-        final Node<E> l = last;
-        final Node<E> newNode = new Node<>(l, e, null);
-        last = newNode;
-        // 原尾结点是空，说明新的节点既是头也是尾
-        if (l == null)
-            first = newNode;
-        else
-            l.next = newNode;
-        size++;
-        modCount++;
-    }
-
-    /**
-     * Inserts element e before non-null Node succ.
-     */
-    void linkBefore(E e, Node<E> succ) {
-        // assert succ != null;
-        final Node<E> pred = succ.prev;
-        final Node<E> newNode = new Node<>(pred, e, succ);
-        succ.prev = newNode;
-        if (pred == null)
-            first = newNode;
-        else
-            pred.next = newNode;
-        size++;
-        modCount++;
-    }
-
-    /**
-     * Unlinks non-null first node f.
-     */
-    private E unlinkFirst(Node<E> f) {
-        // assert f == first && f != null;
-        final E element = f.item;
-        final Node<E> next = f.next;
-        f.item = null;
-        f.next = null; // help GC
-        first = next;
-        if (next == null)
-            last = null;
-        else
-            next.prev = null;
-        size--;
-        modCount++;
-        return element;
-    }
-
-    /**
-     * Unlinks non-null last node l.
-     */
-    private E unlinkLast(Node<E> l) {
-        // assert l == last && l != null;
-        final E element = l.item;
-        final Node<E> prev = l.prev;
-        l.item = null;
-        l.prev = null; // help GC
-        last = prev;
-        if (prev == null)
-            first = null;
-        else
-            prev.next = null;
-        size--;
-        modCount++;
-        return element;
-    }
-
-    /**
-     * Unlinks non-null node x.
-     */
-    E unlink(Node<E> x) {
-        // assert x != null;
-        final E element = x.item;
-        final Node<E> next = x.next;
-        final Node<E> prev = x.prev;
-
-        if (prev == null) {
-            first = next;
-        } else {
-            prev.next = next;
-            x.prev = null;
-        }
-
-        if (next == null) {
-            last = prev;
-        } else {
-            next.prev = prev;
-            x.next = null;
-        }
-
-        x.item = null;
-        size--;
-        modCount++;
-        return element;
-    }
-
-    /**
-     * 获取头结点元素
-     *
-     * @return the first element in this list
-     * @throws NoSuchElementException if this list is empty
-     */
-    public E getFirst() {
-        final Node<E> f = first;
-        if (f == null)
-            throw new NoSuchElementException();
-        return f.item;
-    }
-
-    /**
-     * Returns the last element in this list.
-     *
-     * @return the last element in this list
-     * @throws NoSuchElementException if this list is empty
-     */
-    public E getLast() {
-        final Node<E> l = last;
-        if (l == null)
-            throw new NoSuchElementException();
-        return l.item;
-    }
-
-    /**
-     * Removes and returns the first element from this list.
-     *
-     * @return the first element from this list
-     * @throws NoSuchElementException if this list is empty
-     */
-    public E removeFirst() {
-        final Node<E> f = first;
-        if (f == null)
-            throw new NoSuchElementException();
-        return unlinkFirst(f);
-    }
-
-    /**
-     * Removes and returns the last element from this list.
-     *
-     * @return the last element from this list
-     * @throws NoSuchElementException if this list is empty
-     */
-    public E removeLast() {
-        final Node<E> l = last;
-        if (l == null)
-            throw new NoSuchElementException();
-        return unlinkLast(l);
-    }
-
-    /**
-     * Inserts the specified element at the beginning of this list.
-     *
-     * @param e the element to add
-     */
-    public void addFirst(E e) {
-        linkFirst(e);
-    }
-
-    /**
-     * Appends the specified element to the end of this list.
-     *
-     * <p>This method is equivalent to {@link #add}.
-     *
-     * @param e the element to add
-     */
-    public void addLast(E e) {
-        linkLast(e);
-    }
-
-    /**
-     * Returns {@code true} if this list contains the specified element.
-     * More formally, returns {@code true} if and only if this list contains
-     * at least one element {@code e} such that
-     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>.
-     *
-     * @param o element whose presence in this list is to be tested
-     * @return {@code true} if this list contains the specified element
-     */
-    public boolean contains(Object o) {
-        return indexOf(o) != -1;
-    }
-
-    /**
-     * Returns the number of elements in this list.
-     *
-     * @return the number of elements in this list
-     */
-    public int size() {
-        return size;
-    }
-
-    /**
-     * Appends the specified element to the end of this list.
-     *
-     * <p>This method is equivalent to {@link #addLast}.
-     *
-     * @param e element to be appended to this list
-     * @return {@code true} (as specified by {@link Collection#add})
-     */
-    public boolean add(E e) {
-        linkLast(e);
-        return true;
-    }
-
-    /**
-     * Removes the first occurrence of the specified element from this list,
-     * if it is present.  If this list does not contain the element, it is
-     * unchanged.  More formally, removes the element with the lowest index
-     * {@code i} such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>
-     * (if such an element exists).  Returns {@code true} if this list
-     * contained the specified element (or equivalently, if this list
-     * changed as a result of the call).
-     *
-     * @param o element to be removed from this list, if present
-     * @return {@code true} if this list contained the specified element
-     */
-    public boolean remove(Object o) {
-        if (o == null) {
-            for (Node<E> x = first; x != null; x = x.next) {
-                if (x.item == null) {
-                    unlink(x);
-                    return true;
-                }
-            }
-        } else {
-            for (Node<E> x = first; x != null; x = x.next) {
-                if (o.equals(x.item)) {
-                    unlink(x);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Appends all of the elements in the specified collection to the end of
-     * this list, in the order that they are returned by the specified
-     * collection's iterator.  The behavior of this operation is undefined if
-     * the specified collection is modified while the operation is in
-     * progress.  (Note that this will occur if the specified collection is
-     * this list, and it's nonempty.)
-     *
-     * @param c collection containing elements to be added to this list
-     * @return {@code true} if this list changed as a result of the call
-     * @throws NullPointerException if the specified collection is null
-     */
-    public boolean addAll(Collection<? extends E> c) {
-        return addAll(size, c);
-    }
-
-    /**
-     * Inserts all of the elements in the specified collection into this
-     * list, starting at the specified position.  Shifts the element
-     * currently at that position (if any) and any subsequent elements to
-     * the right (increases their indices).  The new elements will appear
-     * in the list in the order that they are returned by the
-     * specified collection's iterator.
-     *
-     * @param index index at which to insert the first element
-     *              from the specified collection
-     * @param c collection containing elements to be added to this list
-     * @return {@code true} if this list changed as a result of the call
-     * @throws IndexOutOfBoundsException {@inheritDoc}
-     * @throws NullPointerException if the specified collection is null
-     */
-    public boolean addAll(int index, Collection<? extends E> c) {
-        checkPositionIndex(index);
-
-        Object[] a = c.toArray();
-        int numNew = a.length;
-        if (numNew == 0)
-            return false;
-
-        Node<E> pred, succ;
-        if (index == size) {
-            succ = null;
-            pred = last;
-        } else {
-            succ = node(index);
-            pred = succ.prev;
-        }
-
-        for (Object o : a) {
-            @SuppressWarnings("unchecked") E e = (E) o;
-            Node<E> newNode = new Node<>(pred, e, null);
-            if (pred == null)
-                first = newNode;
-            else
-                pred.next = newNode;
-            pred = newNode;
-        }
-
-        if (succ == null) {
-            last = pred;
-        } else {
-            pred.next = succ;
-            succ.prev = pred;
-        }
-
-        size += numNew;
-        modCount++;
-        return true;
-    }
-
-    /**
-     * Removes all of the elements from this list.
-     * The list will be empty after this call returns.
-     */
-    public void clear() {
-        // Clearing all of the links between nodes is "unnecessary", but:
-        // - helps a generational GC if the discarded nodes inhabit
-        //   more than one generation
-        // - is sure to free memory even if there is a reachable Iterator
-        for (Node<E> x = first; x != null; ) {
-            Node<E> next = x.next;
-            x.item = null;
-            x.next = null;
-            x.prev = null;
-            x = next;
-        }
-        first = last = null;
-        size = 0;
-        modCount++;
-    }
-
-
-    // Positional Access Operations
-
-    /**
-     * 获取指定索引的元素
-     *
-     * @param index 指定的索引
-     * @return the element at the specified position in this list
-     * @throws IndexOutOfBoundsException 索引越界抛出此异常
-     */
-    public E get(int index) {
-        checkElementIndex(index);
-        return node(index).item;
-    }
-
-    /**
-     * Replaces the element at the specified position in this list with the
-     * specified element.
-     *
-     * @param index index of the element to replace
-     * @param element element to be stored at the specified position
-     * @return the element previously at the specified position
-     * @throws IndexOutOfBoundsException {@inheritDoc}
-     */
-    public E set(int index, E element) {
-        checkElementIndex(index);
-        Node<E> x = node(index);
-        E oldVal = x.item;
-        x.item = element;
-        return oldVal;
-    }
-
-    /**
-     * Inserts the specified element at the specified position in this list.
-     * Shifts the element currently at that position (if any) and any
-     * subsequent elements to the right (adds one to their indices).
-     *
-     * @param index index at which the specified element is to be inserted
-     * @param element element to be inserted
-     * @throws IndexOutOfBoundsException {@inheritDoc}
-     */
-    public void add(int index, E element) {
-        checkPositionIndex(index);
-
-        if (index == size)
-            linkLast(element);
-        else
-            linkBefore(element, node(index));
-    }
-
-    /**
-     * Removes the element at the specified position in this list.  Shifts any
-     * subsequent elements to the left (subtracts one from their indices).
-     * Returns the element that was removed from the list.
-     *
-     * @param index the index of the element to be removed
-     * @return the element previously at the specified position
-     * @throws IndexOutOfBoundsException {@inheritDoc}
-     */
-    public E remove(int index) {
-        checkElementIndex(index);
-        return unlink(node(index));
-    }
-
-    /**
-     * 判断索引是否越界
-     */
-    private boolean isElementIndex(int index) {
-        return index >= 0 && index < size;
-    }
-
-    /**
-     * Tells if the argument is the index of a valid position for an
-     * iterator or an add operation.
-     */
-    private boolean isPositionIndex(int index) {
-        return index >= 0 && index <= size;
-    }
-
-    /**
-     * Constructs an IndexOutOfBoundsException detail message.
-     * Of the many possible refactorings of the error handling code,
-     * this "outlining" performs best with both server and client VMs.
-     */
-    private String outOfBoundsMsg(int index) {
-        return "Index: "+index+", Size: "+size;
-    }
-
-    /**
-     * 判断索引是否越界
-     */
-    private void checkElementIndex(int index) {
-        if (!isElementIndex(index))
-            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
-    }
-
-    private void checkPositionIndex(int index) {
-        if (!isPositionIndex(index))
-            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
-    }
-
-    /**
-     * Returns the (non-null) Node at the specified element index.
-     */
-    Node<E> node(int index) {
-        // assert isElementIndex(index);
-
-        if (index < (size >> 1)) {
-            Node<E> x = first;
-            for (int i = 0; i < index; i++)
-                x = x.next;
-            return x;
-        } else {
-            Node<E> x = last;
-            for (int i = size - 1; i > index; i--)
-                x = x.prev;
-            return x;
-        }
-    }
-
-    // Search Operations
-
-    /**
-     * Returns the index of the first occurrence of the specified element
-     * in this list, or -1 if this list does not contain the element.
-     * More formally, returns the lowest index {@code i} such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>,
-     * or -1 if there is no such index.
-     *
-     * @param o element to search for
-     * @return the index of the first occurrence of the specified element in
-     *         this list, or -1 if this list does not contain the element
-     */
-    public int indexOf(Object o) {
-        int index = 0;
-        if (o == null) {
-            for (Node<E> x = first; x != null; x = x.next) {
-                if (x.item == null)
-                    return index;
-                index++;
-            }
-        } else {
-            for (Node<E> x = first; x != null; x = x.next) {
-                if (o.equals(x.item))
-                    return index;
-                index++;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Returns the index of the last occurrence of the specified element
-     * in this list, or -1 if this list does not contain the element.
-     * More formally, returns the highest index {@code i} such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>,
-     * or -1 if there is no such index.
-     *
-     * @param o element to search for
-     * @return the index of the last occurrence of the specified element in
-     *         this list, or -1 if this list does not contain the element
-     */
-    public int lastIndexOf(Object o) {
-        int index = size;
-        if (o == null) {
-            for (Node<E> x = last; x != null; x = x.prev) {
-                index--;
-                if (x.item == null)
-                    return index;
-            }
-        } else {
-            for (Node<E> x = last; x != null; x = x.prev) {
-                index--;
-                if (o.equals(x.item))
-                    return index;
-            }
-        }
-        return -1;
-    }
-
-    // Queue operations.
-
-    /**
-     * Retrieves, but does not remove, the head (first element) of this list.
-     *
-     * @return the head of this list, or {@code null} if this list is empty
-     * @since 1.5
-     */
-    public E peek() {
-        final Node<E> f = first;
-        return (f == null) ? null : f.item;
-    }
-
-    /**
-     * Retrieves, but does not remove, the head (first element) of this list.
-     *
-     * @return the head of this list
-     * @throws NoSuchElementException if this list is empty
-     * @since 1.5
-     */
-    public E element() {
-        return getFirst();
-    }
-
-    /**
-     * Retrieves and removes the head (first element) of this list.
-     *
-     * @return the head of this list, or {@code null} if this list is empty
-     * @since 1.5
-     */
-    public E poll() {
-        final Node<E> f = first;
-        return (f == null) ? null : unlinkFirst(f);
-    }
-
-    /**
-     * Retrieves and removes the head (first element) of this list.
-     *
-     * @return the head of this list
-     * @throws NoSuchElementException if this list is empty
-     * @since 1.5
-     */
-    public E remove() {
-        return removeFirst();
-    }
-
-    /**
-     * Adds the specified element as the tail (last element) of this list.
-     *
-     * @param e the element to add
-     * @return {@code true} (as specified by {@link Queue#offer})
-     * @since 1.5
-     */
-    public boolean offer(E e) {
-        return add(e);
-    }
-
-    // Deque operations
-    /**
-     * Inserts the specified element at the front of this list.
-     *
-     * @param e the element to insert
-     * @return {@code true} (as specified by {@link Deque#offerFirst})
-     * @since 1.6
-     */
-    public boolean offerFirst(E e) {
-        addFirst(e);
-        return true;
-    }
-
-    /**
-     * Inserts the specified element at the end of this list.
-     *
-     * @param e the element to insert
-     * @return {@code true} (as specified by {@link Deque#offerLast})
-     * @since 1.6
-     */
-    public boolean offerLast(E e) {
-        addLast(e);
-        return true;
-    }
-
-    /**
-     * Retrieves, but does not remove, the first element of this list,
-     * or returns {@code null} if this list is empty.
-     *
-     * @return the first element of this list, or {@code null}
-     *         if this list is empty
-     * @since 1.6
-     */
-    public E peekFirst() {
-        final Node<E> f = first;
-        return (f == null) ? null : f.item;
-     }
-
-    /**
-     * Retrieves, but does not remove, the last element of this list,
-     * or returns {@code null} if this list is empty.
-     *
-     * @return the last element of this list, or {@code null}
-     *         if this list is empty
-     * @since 1.6
-     */
-    public E peekLast() {
-        final Node<E> l = last;
-        return (l == null) ? null : l.item;
-    }
-
-    /**
-     * Retrieves and removes the first element of this list,
-     * or returns {@code null} if this list is empty.
-     *
-     * @return the first element of this list, or {@code null} if
-     *     this list is empty
-     * @since 1.6
-     */
-    public E pollFirst() {
-        final Node<E> f = first;
-        return (f == null) ? null : unlinkFirst(f);
-    }
-
-    /**
-     * Retrieves and removes the last element of this list,
-     * or returns {@code null} if this list is empty.
-     *
-     * @return the last element of this list, or {@code null} if
-     *     this list is empty
-     * @since 1.6
-     */
-    public E pollLast() {
-        final Node<E> l = last;
-        return (l == null) ? null : unlinkLast(l);
-    }
-
-    /**
-     * Pushes an element onto the stack represented by this list.  In other
-     * words, inserts the element at the front of this list.
-     *
-     * <p>This method is equivalent to {@link #addFirst}.
-     *
-     * @param e the element to push
-     * @since 1.6
-     */
-    public void push(E e) {
-        addFirst(e);
-    }
-
-    /**
-     * Pops an element from the stack represented by this list.  In other
-     * words, removes and returns the first element of this list.
-     *
-     * <p>This method is equivalent to {@link #removeFirst()}.
-     *
-     * @return the element at the front of this list (which is the top
-     *         of the stack represented by this list)
-     * @throws NoSuchElementException if this list is empty
-     * @since 1.6
-     */
-    public E pop() {
-        return removeFirst();
-    }
-
-    /**
-     * Removes the first occurrence of the specified element in this
-     * list (when traversing the list from head to tail).  If the list
-     * does not contain the element, it is unchanged.
-     *
-     * @param o element to be removed from this list, if present
-     * @return {@code true} if the list contained the specified element
-     * @since 1.6
-     */
-    public boolean removeFirstOccurrence(Object o) {
-        return remove(o);
-    }
-
-    /**
-     * Removes the last occurrence of the specified element in this
-     * list (when traversing the list from head to tail).  If the list
-     * does not contain the element, it is unchanged.
-     *
-     * @param o element to be removed from this list, if present
-     * @return {@code true} if the list contained the specified element
-     * @since 1.6
-     */
-    public boolean removeLastOccurrence(Object o) {
-        if (o == null) {
-            for (Node<E> x = last; x != null; x = x.prev) {
-                if (x.item == null) {
-                    unlink(x);
-                    return true;
-                }
-            }
-        } else {
-            for (Node<E> x = last; x != null; x = x.prev) {
-                if (o.equals(x.item)) {
-                    unlink(x);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns a list-iterator of the elements in this list (in proper
-     * sequence), starting at the specified position in the list.
-     * Obeys the general contract of {@code List.listIterator(int)}.<p>
-     *
-     * The list-iterator is <i>fail-fast</i>: if the list is structurally
-     * modified at any time after the Iterator is created, in any way except
-     * through the list-iterator's own {@code remove} or {@code add}
-     * methods, the list-iterator will throw a
-     * {@code ConcurrentModificationException}.  Thus, in the face of
-     * concurrent modification, the iterator fails quickly and cleanly, rather
-     * than risking arbitrary, non-deterministic behavior at an undetermined
-     * time in the future.
-     *
-     * @param index index of the first element to be returned from the
-     *              list-iterator (by a call to {@code next})
-     * @return a ListIterator of the elements in this list (in proper
-     *         sequence), starting at the specified position in the list
-     * @throws IndexOutOfBoundsException {@inheritDoc}
-     * @see List#listIterator(int)
-     */
-    public ListIterator<E> listIterator(int index) {
-        checkPositionIndex(index);
-        return new ListItr(index);
-    }
-
-    private class ListItr implements ListIterator<E> {
-        private Node<E> lastReturned;
-        private Node<E> next;
-        private int nextIndex;
-        private int expectedModCount = modCount;
-
-        ListItr(int index) {
-            // assert isPositionIndex(index);
-            next = (index == size) ? null : node(index);
-            nextIndex = index;
-        }
-
-        public boolean hasNext() {
-            return nextIndex < size;
-        }
-
-        public E next() {
-            checkForComodification();
-            if (!hasNext())
-                throw new NoSuchElementException();
-
-            lastReturned = next;
-            next = next.next;
-            nextIndex++;
-            return lastReturned.item;
-        }
-
-        public boolean hasPrevious() {
-            return nextIndex > 0;
-        }
-
-        public E previous() {
-            checkForComodification();
-            if (!hasPrevious())
-                throw new NoSuchElementException();
-
-            lastReturned = next = (next == null) ? last : next.prev;
-            nextIndex--;
-            return lastReturned.item;
-        }
-
-        public int nextIndex() {
-            return nextIndex;
-        }
-
-        public int previousIndex() {
-            return nextIndex - 1;
-        }
-
-        public void remove() {
-            checkForComodification();
-            if (lastReturned == null)
-                throw new IllegalStateException();
-
-            Node<E> lastNext = lastReturned.next;
-            unlink(lastReturned);
-            if (next == lastReturned)
-                next = lastNext;
-            else
-                nextIndex--;
-            lastReturned = null;
-            expectedModCount++;
-        }
-
-        public void set(E e) {
-            if (lastReturned == null)
-                throw new IllegalStateException();
-            checkForComodification();
-            lastReturned.item = e;
-        }
-
-        public void add(E e) {
-            checkForComodification();
-            lastReturned = null;
-            if (next == null)
-                linkLast(e);
-            else
-                linkBefore(e, next);
-            nextIndex++;
-            expectedModCount++;
-        }
-
-        public void forEachRemaining(Consumer<? super E> action) {
-            Objects.requireNonNull(action);
-            while (modCount == expectedModCount && nextIndex < size) {
-                action.accept(next.item);
-                lastReturned = next;
-                next = next.next;
-                nextIndex++;
-            }
-            checkForComodification();
-        }
-
-        final void checkForComodification() {
-            if (modCount != expectedModCount)
-                throw new ConcurrentModificationException();
-        }
-    }
-
-    private static class Node<E> {
-        E item;
-        Node<E> next;
-        Node<E> prev;
-
-        Node(Node<E> prev, E element, Node<E> next) {
-            this.item = element;
-            this.next = next;
-            this.prev = prev;
-        }
-    }
-
-    /**
-     * @since 1.6
-     */
-    public Iterator<E> descendingIterator() {
-        return new DescendingIterator();
-    }
-
-    /**
-     * Adapter to provide descending iterators via ListItr.previous
-     */
-    private class DescendingIterator implements Iterator<E> {
-        private final ListItr itr = new ListItr(size());
-        public boolean hasNext() {
-            return itr.hasPrevious();
-        }
-        public E next() {
-            return itr.previous();
-        }
-        public void remove() {
-            itr.remove();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private LinkedList<E> superClone() {
-        try {
-            return (LinkedList<E>) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new InternalError(e);
-        }
-    }
-
-    /**
-     * Returns a shallow copy of this {@code LinkedList}. (The elements
-     * themselves are not cloned.)
-     *
-     * @return a shallow copy of this {@code LinkedList} instance
-     */
-    public Object clone() {
-        LinkedList<E> clone = superClone();
-
-        // Put clone into "virgin" state
-        clone.first = clone.last = null;
-        clone.size = 0;
-        clone.modCount = 0;
-
-        // Initialize clone with our elements
-        for (Node<E> x = first; x != null; x = x.next)
-            clone.add(x.item);
-
-        return clone;
-    }
-
-    /**
-     * Returns an array containing all of the elements in this list
-     * in proper sequence (from first to last element).
-     *
-     * <p>The returned array will be "safe" in that no references to it are
-     * maintained by this list.  (In other words, this method must allocate
-     * a new array).  The caller is thus free to modify the returned array.
-     *
-     * <p>This method acts as bridge between array-based and collection-based
-     * APIs.
-     *
-     * @return an array containing all of the elements in this list
-     *         in proper sequence
-     */
-    public Object[] toArray() {
-        Object[] result = new Object[size];
-        int i = 0;
-        for (Node<E> x = first; x != null; x = x.next)
-            result[i++] = x.item;
-        return result;
-    }
-
-    /**
-     * Returns an array containing all of the elements in this list in
-     * proper sequence (from first to last element); the runtime type of
-     * the returned array is that of the specified array.  If the list fits
-     * in the specified array, it is returned therein.  Otherwise, a new
-     * array is allocated with the runtime type of the specified array and
-     * the size of this list.
-     *
-     * <p>If the list fits in the specified array with room to spare (i.e.,
-     * the array has more elements than the list), the element in the array
-     * immediately following the end of the list is set to {@code null}.
-     * (This is useful in determining the length of the list <i>only</i> if
-     * the caller knows that the list does not contain any null elements.)
-     *
-     * <p>Like the {@link #toArray()} method, this method acts as bridge between
-     * array-based and collection-based APIs.  Further, this method allows
-     * precise control over the runtime type of the output array, and may,
-     * under certain circumstances, be used to save allocation costs.
-     *
-     * <p>Suppose {@code x} is a list known to contain only strings.
-     * The following code can be used to dump the list into a newly
-     * allocated array of {@code String}:
-     *
-     * <pre>
-     *     String[] y = x.toArray(new String[0]);</pre>
-     *
-     * Note that {@code toArray(new Object[0])} is identical in function to
-     * {@code toArray()}.
-     *
-     * @param a the array into which the elements of the list are to
-     *          be stored, if it is big enough; otherwise, a new array of the
-     *          same runtime type is allocated for this purpose.
-     * @return an array containing the elements of the list
-     * @throws ArrayStoreException if the runtime type of the specified array
-     *         is not a supertype of the runtime type of every element in
-     *         this list
-     * @throws NullPointerException if the specified array is null
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T[] toArray(T[] a) {
-        if (a.length < size)
-            a = (T[])java.lang.reflect.Array.newInstance(
-                                a.getClass().getComponentType(), size);
-        int i = 0;
-        Object[] result = a;
-        for (Node<E> x = first; x != null; x = x.next)
-            result[i++] = x.item;
-
-        if (a.length > size)
-            a[size] = null;
-
-        return a;
-    }
-
-    private static final long serialVersionUID = 876323262645176354L;
-
-    /**
-     * Saves the state of this {@code LinkedList} instance to a stream
-     * (that is, serializes it).
-     *
-     * @serialData The size of the list (the number of elements it
-     *             contains) is emitted (int), followed by all of its
-     *             elements (each an Object) in the proper order.
-     */
-    private void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException {
-        // Write out any hidden serialization magic
-        s.defaultWriteObject();
-
-        // Write out size
-        s.writeInt(size);
-
-        // Write out all elements in the proper order.
-        for (Node<E> x = first; x != null; x = x.next)
-            s.writeObject(x.item);
-    }
-
-    /**
-     * Reconstitutes this {@code LinkedList} instance from a stream
-     * (that is, deserializes it).
-     */
-    @SuppressWarnings("unchecked")
-    private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
-        // Read in any hidden serialization magic
-        s.defaultReadObject();
-
-        // Read in size
-        int size = s.readInt();
-
-        // Read in all elements in the proper order.
-        for (int i = 0; i < size; i++)
-            linkLast((E)s.readObject());
-    }
-
-    /**
-     * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
-     * and <em>fail-fast</em> {@link Spliterator} over the elements in this
-     * list.
-     *
-     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
-     * {@link Spliterator#ORDERED}.  Overriding implementations should document
-     * the reporting of additional characteristic values.
-     *
-     * @implNote
-     * The {@code Spliterator} additionally reports {@link Spliterator#SUBSIZED}
-     * and implements {@code trySplit} to permit limited parallelism..
-     *
-     * @return a {@code Spliterator} over the elements in this list
-     * @since 1.8
-     */
-    @Override
-    public Spliterator<E> spliterator() {
-        return new LLSpliterator<E>(this, -1, 0);
-    }
-
-    /** A customized variant of Spliterators.IteratorSpliterator */
-    static final class LLSpliterator<E> implements Spliterator<E> {
-        static final int BATCH_UNIT = 1 << 10;  // batch array size increment
-        static final int MAX_BATCH = 1 << 25;  // max batch array size;
-        final LinkedList<E> list; // null OK unless traversed
-        Node<E> current;      // current node; null until initialized
-        int est;              // size estimate; -1 until first needed
-        int expectedModCount; // initialized when est set
-        int batch;            // batch size for splits
-
-        LLSpliterator(LinkedList<E> list, int est, int expectedModCount) {
-            this.list = list;
-            this.est = est;
-            this.expectedModCount = expectedModCount;
-        }
-
-        final int getEst() {
-            int s; // force initialization
-            final LinkedList<E> lst;
-            if ((s = est) < 0) {
-                if ((lst = list) == null)
-                    s = est = 0;
-                else {
-                    expectedModCount = lst.modCount;
-                    current = lst.first;
-                    s = est = lst.size;
-                }
-            }
-            return s;
-        }
-
-        public long estimateSize() { return (long) getEst(); }
-
-        public Spliterator<E> trySplit() {
-            Node<E> p;
-            int s = getEst();
-            if (s > 1 && (p = current) != null) {
-                int n = batch + BATCH_UNIT;
-                if (n > s)
-                    n = s;
-                if (n > MAX_BATCH)
-                    n = MAX_BATCH;
-                Object[] a = new Object[n];
-                int j = 0;
-                do { a[j++] = p.item; } while ((p = p.next) != null && j < n);
-                current = p;
-                batch = j;
-                est = s - j;
-                return Spliterators.spliterator(a, 0, j, Spliterator.ORDERED);
-            }
-            return null;
-        }
-
-        public void forEachRemaining(Consumer<? super E> action) {
-            Node<E> p; int n;
-            if (action == null) throw new NullPointerException();
-            if ((n = getEst()) > 0 && (p = current) != null) {
-                current = null;
-                est = 0;
-                do {
-                    E e = p.item;
-                    p = p.next;
-                    action.accept(e);
-                } while (p != null && --n > 0);
-            }
-            if (list.modCount != expectedModCount)
-                throw new ConcurrentModificationException();
-        }
-
-        public boolean tryAdvance(Consumer<? super E> action) {
-            Node<E> p;
-            if (action == null) throw new NullPointerException();
-            if (getEst() > 0 && (p = current) != null) {
-                --est;
-                E e = p.item;
-                current = p.next;
-                action.accept(e);
-                if (list.modCount != expectedModCount)
-                    throw new ConcurrentModificationException();
-                return true;
-            }
-            return false;
-        }
-
-        public int characteristics() {
-            return Spliterator.ORDERED | Spliterator.SIZED | Spliterator.SUBSIZED;
-        }
-    }
+		extends AbstractSequentialList<E>
+		implements List<E>, Deque<E>, Cloneable, java.io.Serializable {
+	/**
+	 * 记录当前容器的最大索引
+	 */
+	transient int size = 0;
+
+	/**
+	 * 头结点
+	 */
+	transient Node<E> first;
+
+	/**
+	 * 尾节点
+	 */
+	transient Node<E> last;
+
+	/**
+	 * 空构造函数
+	 */
+	public LinkedList() {
+	}
+
+	/**
+	 * 创建一个含有集合c的链表类
+	 *
+	 * @param c 传入的集合
+	 * @throws NullPointerException 集合为空抛出此异常
+	 */
+	public LinkedList(Collection<? extends E> c) {
+		this();
+		addAll(c);
+	}
+
+	/**
+	 * 把元素插入到头结点
+	 */
+	private void linkFirst(E e) {
+		final Node<E> f = first;
+		final Node<E> newNode = new Node<>(null, e, f);
+		first = newNode;
+		// 原头结点是空，说明新的节点既是头也是尾
+		if (f == null)
+			last = newNode;
+		else
+			f.prev = newNode;
+		size++;
+		modCount++;
+	}
+
+	/**
+	 * 在尾节点插入元素
+	 */
+	void linkLast(E e) {
+		final Node<E> l = last;
+		final Node<E> newNode = new Node<>(l, e, null);
+		last = newNode;
+		// 原尾结点是空，说明新的节点既是头也是尾
+		if (l == null)
+			first = newNode;
+		else
+			l.next = newNode;
+		size++;
+		modCount++;
+	}
+
+	/**
+	 * 在元素succ前面插入元素e
+	 */
+	void linkBefore(E e, Node<E> succ) {
+		// assert succ != null;
+		final Node<E> pred = succ.prev;
+		// 节点e的前一个是pred，后一个是succ
+		final Node<E> newNode = new Node<>(pred, e, succ);
+		// succ前一个变成为succ
+		succ.prev = newNode;
+		// succ原来的前一个节点为空，说明e就是头部
+		if (pred == null)
+			first = newNode;
+		else
+			pred.next = newNode;
+		size++;
+		modCount++;
+	}
+
+	/**
+	 * 把头结点f删除
+	 */
+	private E unlinkFirst(Node<E> f) {
+		// assert f == first && f != null;
+		final E element = f.item;
+		final Node<E> next = f.next;
+		f.item = null;
+		f.next = null; // help GC
+		// f节点next作为头结点
+		first = next;
+		// f的next为空说明已经没有元素了
+		if (next == null)
+			last = null;
+		else
+			next.prev = null;
+		size--;
+		modCount++;
+		return element;
+	}
+
+	/**
+	 * 把尾部的节点l删除，思路和{#link {@link LinkedList#unlinkFirst(Node)}差不多
+	 */
+	private E unlinkLast(Node<E> l) {
+		// assert l == last && l != null;
+		final E element = l.item;
+		final Node<E> prev = l.prev;
+		l.item = null;
+		l.prev = null; // help GC
+		last = prev;
+		if (prev == null)
+			first = null;
+		else
+			prev.next = null;
+		size--;
+		modCount++;
+		return element;
+	}
+
+	/**
+	 * 删除链表中的x元素
+	 */
+	E unlink(Node<E> x) {
+		// assert x != null;
+		final E element = x.item;
+		final Node<E> next = x.next;
+		final Node<E> prev = x.prev;
+
+		// x的pre为空，则x的next就是头节点
+		if (prev == null) {
+			first = next;
+		}
+		// x的pre不为空，x的pre节点的next=x的next
+		else {
+			prev.next = next;
+			x.prev = null;
+		}
+
+		// x的next为空，说明x是尾节点
+		if (next == null) {
+			last = prev;
+		}
+		// next不为空，则x的next的pre就是x的pre
+		else {
+			next.prev = prev;
+			x.next = null;
+		}
+
+		x.item = null;
+		size--;
+		modCount++;
+		return element;
+	}
+
+	/**
+	 * 获取头结点元素
+	 *
+	 * @throws NoSuchElementException 如果list为空，抛出此异常
+	 */
+	public E getFirst() {
+		final Node<E> f = first;
+		if (f == null)
+			throw new NoSuchElementException();
+		return f.item;
+	}
+
+	/**
+	 * 获取尾结点元素
+	 *
+	 * @throws NoSuchElementException 如果list为空，抛出此异常
+	 */
+	public E getLast() {
+		final Node<E> l = last;
+		if (l == null)
+			throw new NoSuchElementException();
+		return l.item;
+	}
+
+	/**
+	 * 删除链表的头结点
+	 *
+	 * @return 返回被删除的节点
+	 * @throws NoSuchElementException 如果list为空，抛出此异常
+	 */
+	public E removeFirst() {
+		final Node<E> f = first;
+		if (f == null)
+			throw new NoSuchElementException();
+		return unlinkFirst(f);
+	}
+
+	/**
+	 * 删除链表的尾结点删除
+	 *
+	 * @return 返回被删除的节点
+	 * @throws NoSuchElementException 如果list为空，抛出此异常
+	 */
+	public E removeLast() {
+		final Node<E> l = last;
+		if (l == null)
+			throw new NoSuchElementException();
+		return unlinkLast(l);
+	}
+
+	/**
+	 * 把元素e插入到头部
+	 *
+	 * @param e 需要插入的元素
+	 */
+	public void addFirst(E e) {
+		linkFirst(e);
+	}
+
+	/**
+	 * 把元素e插入到尾部
+	 *
+	 * <p>此方法相当于 {@link #add}.
+	 *
+	 * @param e 需要插入的元素
+	 */
+	public void addLast(E e) {
+		linkLast(e);
+	}
+
+	/**
+	 * 判断链表中是否包含指定元素，元素可以为null
+	 *
+	 * @param o 传入的元素
+	 * @return 包含返回true，否则返回false
+	 */
+	public boolean contains(Object o) {
+		return indexOf(o) != -1;
+	}
+
+	/**
+	 * 返回链表中元素的个数
+	 *
+	 * @return 返回链表中元素的个数
+	 */
+	public int size() {
+		return size;
+	}
+
+	/**
+	 * 把元素e插入到尾部
+	 *
+	 * <p>此方法相当于 {@link #addLast}.
+	 *
+	 * @param e 元素
+	 * @return 添加成功返回true
+	 */
+	public boolean add(E e) {
+		linkLast(e);
+		return true;
+	}
+
+	/**
+	 * 移除元素o第一次出现的位置，o可以为null
+	 *
+	 * @param o 需要移除的元素o
+	 * @return 找到并删除成功返回true，否则返回false
+	 */
+	public boolean remove(Object o) {
+		if (o == null) {
+			for (Node<E> x = first; x != null; x = x.next) {
+				if (x.item == null) {
+					unlink(x);
+					return true;
+				}
+			}
+		} else {
+			for (Node<E> x = first; x != null; x = x.next) {
+				if (o.equals(x.item)) {
+					unlink(x);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 把集合c加入到链表的末端
+	 *
+	 * @param c 集合
+	 * @return 集合c有元素且插入成功返回true，否则返回false
+	 * @throws NullPointerException 集合c为null抛出此异常
+	 */
+	public boolean addAll(Collection<? extends E> c) {
+		return addAll(size, c);
+	}
+
+	/**
+	 * 从指定位置开始把集合加入到链表末端，index范围:[0,size]
+	 *
+	 * @param index 插入的位置
+	 * @param c     集合
+	 * @return 集合c有元素且插入成功返回true，否则返回false
+	 * @throws IndexOutOfBoundsException index越界抛出此异常
+	 * @throws NullPointerException      集合c为null抛出此异常
+	 */
+	public boolean addAll(int index, Collection<? extends E> c) {
+		checkPositionIndex(index);
+
+		// c集合转数组，这里感觉先取c.size判断拿到上面会好一些，如果没有元素没有必要new空数组了
+		Object[] a = c.toArray();
+		int numNew = a.length;
+		if (numNew == 0)
+			return false;
+
+		// pred：要插入第一个元素的pre
+		// succ：要插入最后一个元素的next
+		Node<E> pred, succ;
+		if (index == size) {
+			succ = null;
+			pred = last;
+		} else {
+			succ = node(index);
+			pred = succ.prev;
+		}
+
+		for (Object o : a) {
+			@SuppressWarnings("unchecked") E e = (E) o;
+			Node<E> newNode = new Node<>(pred, e, null);
+			// 当前节点没有pre，说明新的节点=头结点
+			if (pred == null)
+				first = newNode;
+				// 当前节点的pre的next=当前节点
+			else
+				pred.next = newNode;
+			// 后一个节点的pre = 前一个节点
+			pred = newNode;
+		}
+
+		// 此处pred表示集合c的最后一个元素
+		// 最后一个元素的next是空，则最后一个元素 = 尾节点
+		if (succ == null) {
+			last = pred;
+		}
+		// 否则c的最后一个元素的next=succ，succ的pre = 最后一个c的元素
+		else {
+			pred.next = succ;
+			succ.prev = pred;
+		}
+
+		size += numNew;
+		modCount++;
+		return true;
+	}
+
+	/**
+	 * 清空链表里面的所有元素
+	 */
+	public void clear() {
+		// Clearing all of the links between nodes is "unnecessary", but:
+		// - helps a generational GC if the discarded nodes inhabit
+		//   more than one generation
+		// - is sure to free memory even if there is a reachable Iterator
+		// node的item、pre、next都赋为null
+		for (Node<E> x = first; x != null; ) {
+			Node<E> next = x.next;
+			x.item = null;
+			x.next = null;
+			x.prev = null;
+			x = next;
+		}
+		first = last = null;
+		size = 0;
+		modCount++;
+	}
+
+
+	// Positional Access Operations
+
+	/**
+	 * 获取指定索引的元素
+	 *
+	 * @param index 指定的索引
+	 * @return 索引的元素
+	 * @throws IndexOutOfBoundsException 索引越界抛出此异常
+	 */
+	public E get(int index) {
+		// 越界校验
+		checkElementIndex(index);
+		return node(index).item;
+	}
+
+	/**
+	 * 替换指定索引的元素
+	 *
+	 * @param index   要替换的索引
+	 * @param element 替换的新元素
+	 * @return 返回被替换的旧元素
+	 * @throws IndexOutOfBoundsException 索引越界抛出此异常
+	 */
+	public E set(int index, E element) {
+		// 越界校验
+		checkElementIndex(index);
+		// 获取指定索引的元素
+		Node<E> x = node(index);
+		// 替换item
+		E oldVal = x.item;
+		x.item = element;
+		return oldVal;
+	}
+
+	/**
+	 * 在index处插入元素element
+	 *
+	 * @param index   索引
+	 * @param element 新元素
+	 * @throws IndexOutOfBoundsException 可选位置越界抛出此异常
+	 */
+	public void add(int index, E element) {
+		// 对可选位置校验
+		checkPositionIndex(index);
+
+		// 在最后位置插入
+		if (index == size)
+			linkLast(element);
+		else
+			linkBefore(element, node(index));
+	}
+
+	/**
+	 * 删除指定索引的元素
+	 *
+	 * @param index 索引
+	 * @return 返回被删除的元素
+	 * @throws IndexOutOfBoundsException {@inheritDoc} 数组越界抛出此异常
+	 */
+	public E remove(int index) {
+		checkElementIndex(index);
+		return unlink(node(index));
+	}
+
+	/**
+	 * 判断索引是否越界[0,size)
+	 */
+	private boolean isElementIndex(int index) {
+		return index >= 0 && index < size;
+	}
+
+	/**
+	 * 可选位置校验[0,size]
+	 */
+	private boolean isPositionIndex(int index) {
+		return index >= 0 && index <= size;
+	}
+
+	/**
+	 * 越界异常信息的构造方式
+	 */
+	private String outOfBoundsMsg(int index) {
+		return "Index: " + index + ", Size: " + size;
+	}
+
+	/**
+	 * 判断索引是否越界
+	 */
+	private void checkElementIndex(int index) {
+		if (!isElementIndex(index))
+			throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+	}
+
+	/**
+	 * 判断索引是否越界
+	 */
+	private void checkPositionIndex(int index) {
+		if (!isPositionIndex(index))
+			throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+	}
+
+	/**
+	 * 获取对应索引的元素，不做越界检查
+	 */
+	Node<E> node(int index) {
+		// assert isElementIndex(index);
+
+		// 做了优化，索引在前半部分从头遍历
+		if (index < (size >> 1)) {
+			Node<E> x = first;
+			for (int i = 0; i < index; i++)
+				x = x.next;
+			return x;
+		}
+		// 索引在后半部分，从尾部开始遍历
+		else {
+			Node<E> x = last;
+			for (int i = size - 1; i > index; i--)
+				x = x.prev;
+			return x;
+		}
+	}
+
+	// Search Operations
+
+	/**
+	 * 从头部开始检索链表判断是否包含指定元素
+	 *
+	 * @param o 元素
+	 * @return 如果包含返回指定元素的索引，否则返回-1
+	 */
+	public int indexOf(Object o) {
+		int index = 0;
+		// null元素
+		if (o == null) {
+			for (Node<E> x = first; x != null; x = x.next) {
+				if (x.item == null)
+					return index;
+				index++;
+			}
+		}
+		// 非null元素使用equals判断
+		else {
+			for (Node<E> x = first; x != null; x = x.next) {
+				if (o.equals(x.item))
+					return index;
+				index++;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 元素o最后一次出现的位置 <br>
+	 * 实现：从尾部开始查找
+	 *
+	 * @param o 指定元素
+	 * @return 找到返回索引，否则返回-1
+	 */
+	public int lastIndexOf(Object o) {
+		int index = size;
+		if (o == null) {
+			for (Node<E> x = last; x != null; x = x.prev) {
+				index--;
+				if (x.item == null)
+					return index;
+			}
+		} else {
+			for (Node<E> x = last; x != null; x = x.prev) {
+				index--;
+				if (o.equals(x.item))
+					return index;
+			}
+		}
+		return -1;
+	}
+
+	// Queue operations.
+
+	/**
+	 * 检索但不删除链表的头结点
+	 *
+	 * @return 返回链表的头结点，没有返回null
+	 * @since 1.5
+	 */
+	public E peek() {
+		final Node<E> f = first;
+		return (f == null) ? null : f.item;
+	}
+
+	/**
+	 * 检索但不删除头结点，同{@link LinkedList#getFirst()}
+	 *
+	 * @throws NoSuchElementException 如果链表为空，抛出此异常
+	 * @since 1.5
+	 */
+	public E element() {
+		return getFirst();
+	}
+
+	/**
+	 * 检索同时删除头结点
+	 *
+	 * @return 链表为空，返回null，否则返回头结点
+	 * @since 1.5
+	 */
+	public E poll() {
+		final Node<E> f = first;
+		return (f == null) ? null : unlinkFirst(f);
+	}
+
+	/**
+	 * 检索同时删除头结点
+	 *
+	 * @return 头结点
+	 * @throws NoSuchElementException 如果链表为空，抛出此异常
+	 * @since 1.5
+	 */
+	public E remove() {
+		return removeFirst();
+	}
+
+	/**
+	 * 把元素e插入到尾部
+	 *
+	 * <p>此方法相当于 {@link #add}.
+	 *
+	 * @param e 元素
+	 * @return 添加成功返回true
+	 * @since 1.5
+	 */
+	public boolean offer(E e) {
+		return add(e);
+	}
+
+	// Deque operations
+
+	/**
+	 * 把元素e插入到头部
+	 * <p>此方法相当于 {@link #addFirst(Object)}.
+	 *
+	 * @param e 需要插入的元素
+	 * @return 插入成功返回true
+	 * @since 1.6
+	 */
+	public boolean offerFirst(E e) {
+		addFirst(e);
+		return true;
+	}
+
+	/**
+	 * 把元素e插入到尾部
+	 *
+	 * <p>此方法相当于 {@link #add}.
+	 *
+	 * @param e 需要插入的元素
+	 * @return 插入成功返回true
+	 */
+	public boolean offerLast(E e) {
+		addLast(e);
+		return true;
+	}
+
+	/**
+	 * 检索但不删除链表的头结点，同{@link LinkedList#peek()}
+	 *
+	 * @return 返回链表的头结点，没有返回null
+	 * @since 1.5
+	 */
+	public E peekFirst() {
+		final Node<E> f = first;
+		return (f == null) ? null : f.item;
+	}
+
+	/**
+	 * 检索但不删除链表的尾结点
+	 *
+	 * @return 返回链表的尾结点，没有返回null
+	 * @since 1.5
+	 */
+	public E peekLast() {
+		final Node<E> l = last;
+		return (l == null) ? null : l.item;
+	}
+
+	/**
+	 * 检索同时删除头结点，同{@link LinkedList#poll()}
+	 *
+	 * @return 链表为空，返回null，否则返回头结点
+	 * @since 1.6
+	 */
+	public E pollFirst() {
+		final Node<E> f = first;
+		return (f == null) ? null : unlinkFirst(f);
+	}
+
+	/**
+	 * 检索同时删除尾结点
+	 *
+	 * @return 链表为空，返回null，否则返回尾结点
+	 * @since 1.6
+	 */
+	public E pollLast() {
+		final Node<E> l = last;
+		return (l == null) ? null : unlinkLast(l);
+	}
+
+	/**
+	 * 插入元素到头部 <br>
+	 *
+	 * <p>相当于 {@link #addFirst}
+	 *
+	 * @param e 所需的元素
+	 * @since 1.6
+	 */
+	public void push(E e) {
+		addFirst(e);
+	}
+
+	/**
+	 * 出栈操作（把头部结点移除）
+	 *
+	 * <p>方法相当于 {@link #removeFirst()}.
+	 *
+	 * @return 返回被移除元素
+	 * @throws NoSuchElementException 链表为空抛出此异常
+	 * @since 1.6
+	 */
+	public E pop() {
+		return removeFirst();
+	}
+
+	/**
+	 * 移除元素第一次出现的位置<br>
+	 * 方法相当于 {@link LinkedList#remove(Object)}
+	 *
+	 * @param o 需要移除的元素o
+	 * @return 找到并删除成功返回true，否则返回false
+	 * @since 1.6
+	 */
+	public boolean removeFirstOccurrence(Object o) {
+		return remove(o);
+	}
+
+	/**
+	 * 移除元素最后一次出现的位置<br>
+	 * 实现：从尾部开始检索
+	 *
+	 * @param o 需要删除的元素
+	 * @return 找到并删除成功返回true，否则返回false
+	 * @since 1.6
+	 */
+	public boolean removeLastOccurrence(Object o) {
+		if (o == null) {
+			for (Node<E> x = last; x != null; x = x.prev) {
+				if (x.item == null) {
+					unlink(x);
+					return true;
+				}
+			}
+		} else {
+			for (Node<E> x = last; x != null; x = x.prev) {
+				if (o.equals(x.item)) {
+					unlink(x);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Returns a list-iterator of the elements in this list (in proper
+	 * sequence), starting at the specified position in the list.
+	 * Obeys the general contract of {@code List.listIterator(int)}.<p>
+	 * <p>
+	 * The list-iterator is <i>fail-fast</i>: if the list is structurally
+	 * modified at any time after the Iterator is created, in any way except
+	 * through the list-iterator's own {@code remove} or {@code add}
+	 * methods, the list-iterator will throw a
+	 * {@code ConcurrentModificationException}.  Thus, in the face of
+	 * concurrent modification, the iterator fails quickly and cleanly, rather
+	 * than risking arbitrary, non-deterministic behavior at an undetermined
+	 * time in the future.
+	 *
+	 * @param index index of the first element to be returned from the
+	 *              list-iterator (by a call to {@code next})
+	 * @return a ListIterator of the elements in this list (in proper
+	 * sequence), starting at the specified position in the list
+	 * @throws IndexOutOfBoundsException {@inheritDoc}
+	 * @see List#listIterator(int)
+	 */
+	public ListIterator<E> listIterator(int index) {
+		checkPositionIndex(index);
+		return new ListItr(index);
+	}
+
+	private class ListItr implements ListIterator<E> {
+		private Node<E> lastReturned;
+		private Node<E> next;
+		private int nextIndex;
+		private int expectedModCount = modCount;
+
+		ListItr(int index) {
+			// assert isPositionIndex(index);
+			next = (index == size) ? null : node(index);
+			nextIndex = index;
+		}
+
+		public boolean hasNext() {
+			return nextIndex < size;
+		}
+
+		public E next() {
+			checkForComodification();
+			if (!hasNext())
+				throw new NoSuchElementException();
+
+			lastReturned = next;
+			next = next.next;
+			nextIndex++;
+			return lastReturned.item;
+		}
+
+		public boolean hasPrevious() {
+			return nextIndex > 0;
+		}
+
+		public E previous() {
+			checkForComodification();
+			if (!hasPrevious())
+				throw new NoSuchElementException();
+
+			lastReturned = next = (next == null) ? last : next.prev;
+			nextIndex--;
+			return lastReturned.item;
+		}
+
+		public int nextIndex() {
+			return nextIndex;
+		}
+
+		public int previousIndex() {
+			return nextIndex - 1;
+		}
+
+		public void remove() {
+			checkForComodification();
+			if (lastReturned == null)
+				throw new IllegalStateException();
+
+			Node<E> lastNext = lastReturned.next;
+			unlink(lastReturned);
+			if (next == lastReturned)
+				next = lastNext;
+			else
+				nextIndex--;
+			lastReturned = null;
+			expectedModCount++;
+		}
+
+		public void set(E e) {
+			if (lastReturned == null)
+				throw new IllegalStateException();
+			checkForComodification();
+			lastReturned.item = e;
+		}
+
+		public void add(E e) {
+			checkForComodification();
+			lastReturned = null;
+			if (next == null)
+				linkLast(e);
+			else
+				linkBefore(e, next);
+			nextIndex++;
+			expectedModCount++;
+		}
+
+		public void forEachRemaining(Consumer<? super E> action) {
+			Objects.requireNonNull(action);
+			while (modCount == expectedModCount && nextIndex < size) {
+				action.accept(next.item);
+				lastReturned = next;
+				next = next.next;
+				nextIndex++;
+			}
+			checkForComodification();
+		}
+
+		final void checkForComodification() {
+			if (modCount != expectedModCount)
+				throw new ConcurrentModificationException();
+		}
+	}
+
+	private static class Node<E> {
+		E item;
+		Node<E> next;
+		Node<E> prev;
+
+		Node(Node<E> prev, E element, Node<E> next) {
+			this.item = element;
+			this.next = next;
+			this.prev = prev;
+		}
+	}
+
+	/**
+	 * @since 1.6
+	 */
+	public Iterator<E> descendingIterator() {
+		return new DescendingIterator();
+	}
+
+	/**
+	 * Adapter to provide descending iterators via ListItr.previous
+	 */
+	private class DescendingIterator implements Iterator<E> {
+		private final ListItr itr = new ListItr(size());
+
+		public boolean hasNext() {
+			return itr.hasPrevious();
+		}
+
+		public E next() {
+			return itr.previous();
+		}
+
+		public void remove() {
+			itr.remove();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private LinkedList<E> superClone() {
+		try {
+			return (LinkedList<E>) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new InternalError(e);
+		}
+	}
+
+	/**
+	 * Returns a shallow copy of this {@code LinkedList}. (The elements
+	 * themselves are not cloned.)
+	 *
+	 * @return a shallow copy of this {@code LinkedList} instance
+	 */
+	public Object clone() {
+		LinkedList<E> clone = superClone();
+
+		// Put clone into "virgin" state
+		clone.first = clone.last = null;
+		clone.size = 0;
+		clone.modCount = 0;
+
+		// Initialize clone with our elements
+		for (Node<E> x = first; x != null; x = x.next)
+			clone.add(x.item);
+
+		return clone;
+	}
+
+	/**
+	 * 把链表转化为数组副本，并返回
+	 *
+	 * @return 新的数组副本
+	 */
+	public Object[] toArray() {
+		Object[] result = new Object[size];
+		int i = 0;
+		for (Node<E> x = first; x != null; x = x.next)
+			result[i++] = x.item;
+		return result;
+	}
+
+	/**
+	 * 把容器的元素复制到数组中，如果传入数组长度比容器大则在后面补null <br>
+	 * <strong> 传入数组为null会空指针</strong> <br>
+	 * <strong> 传入数组的类型和当前容器泛型不匹配会ArrayStoreException</strong> <br>
+	 *
+	 * @param a 需要填充的数组
+	 * @return 返回一个包含集合元素的数组
+	 * @throws ArrayStoreException  if the runtime type of the specified array
+	 *                              is not a supertype of the runtime type of every element in
+	 *                              this list
+	 * @throws NullPointerException if the specified array is null
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T[] toArray(T[] a) {
+		if (a.length < size)
+			a = (T[]) java.lang.reflect.Array.newInstance(
+					a.getClass().getComponentType(), size);
+		int i = 0;
+		Object[] result = a;
+		for (Node<E> x = first; x != null; x = x.next)
+			result[i++] = x.item;
+
+		if (a.length > size)
+			a[size] = null;
+
+		return a;
+	}
+
+	private static final long serialVersionUID = 876323262645176354L;
+
+	/**
+	 * 对象序列化的方法不管
+	 *
+	 * @serialData The size of the list (the number of elements it
+	 * contains) is emitted (int), followed by all of its
+	 * elements (each an Object) in the proper order.
+	 */
+	private void writeObject(java.io.ObjectOutputStream s)
+			throws java.io.IOException {
+		// Write out any hidden serialization magic
+		s.defaultWriteObject();
+
+		// Write out size
+		s.writeInt(size);
+
+		// Write out all elements in the proper order.
+		for (Node<E> x = first; x != null; x = x.next)
+			s.writeObject(x.item);
+	}
+
+	/**
+	 * 对象序反列化的方法不管
+	 */
+	@SuppressWarnings("unchecked")
+	private void readObject(java.io.ObjectInputStream s)
+			throws java.io.IOException, ClassNotFoundException {
+		// Read in any hidden serialization magic
+		s.defaultReadObject();
+
+		// Read in size
+		int size = s.readInt();
+
+		// Read in all elements in the proper order.
+		for (int i = 0; i < size; i++)
+			linkLast((E) s.readObject());
+	}
+
+	/**
+	 * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
+	 * and <em>fail-fast</em> {@link Spliterator} over the elements in this
+	 * list.
+	 *
+	 * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
+	 * {@link Spliterator#ORDERED}.  Overriding implementations should document
+	 * the reporting of additional characteristic values.
+	 *
+	 * @return a {@code Spliterator} over the elements in this list
+	 * @implNote The {@code Spliterator} additionally reports {@link Spliterator#SUBSIZED}
+	 * and implements {@code trySplit} to permit limited parallelism..
+	 * @since 1.8
+	 */
+	@Override
+	public Spliterator<E> spliterator() {
+		return new LLSpliterator<E>(this, -1, 0);
+	}
+
+	/**
+	 * A customized variant of Spliterators.IteratorSpliterator
+	 */
+	static final class LLSpliterator<E> implements Spliterator<E> {
+		static final int BATCH_UNIT = 1 << 10;  // batch array size increment
+		static final int MAX_BATCH = 1 << 25;  // max batch array size;
+		final LinkedList<E> list; // null OK unless traversed
+		Node<E> current;      // current node; null until initialized
+		int est;              // size estimate; -1 until first needed
+		int expectedModCount; // initialized when est set
+		int batch;            // batch size for splits
+
+		LLSpliterator(LinkedList<E> list, int est, int expectedModCount) {
+			this.list = list;
+			this.est = est;
+			this.expectedModCount = expectedModCount;
+		}
+
+		final int getEst() {
+			int s; // force initialization
+			final LinkedList<E> lst;
+			if ((s = est) < 0) {
+				if ((lst = list) == null)
+					s = est = 0;
+				else {
+					expectedModCount = lst.modCount;
+					current = lst.first;
+					s = est = lst.size;
+				}
+			}
+			return s;
+		}
+
+		public long estimateSize() {
+			return (long) getEst();
+		}
+
+		public Spliterator<E> trySplit() {
+			Node<E> p;
+			int s = getEst();
+			if (s > 1 && (p = current) != null) {
+				int n = batch + BATCH_UNIT;
+				if (n > s)
+					n = s;
+				if (n > MAX_BATCH)
+					n = MAX_BATCH;
+				Object[] a = new Object[n];
+				int j = 0;
+				do {
+					a[j++] = p.item;
+				} while ((p = p.next) != null && j < n);
+				current = p;
+				batch = j;
+				est = s - j;
+				return Spliterators.spliterator(a, 0, j, Spliterator.ORDERED);
+			}
+			return null;
+		}
+
+		public void forEachRemaining(Consumer<? super E> action) {
+			Node<E> p;
+			int n;
+			if (action == null) throw new NullPointerException();
+			if ((n = getEst()) > 0 && (p = current) != null) {
+				current = null;
+				est = 0;
+				do {
+					E e = p.item;
+					p = p.next;
+					action.accept(e);
+				} while (p != null && --n > 0);
+			}
+			if (list.modCount != expectedModCount)
+				throw new ConcurrentModificationException();
+		}
+
+		public boolean tryAdvance(Consumer<? super E> action) {
+			Node<E> p;
+			if (action == null) throw new NullPointerException();
+			if (getEst() > 0 && (p = current) != null) {
+				--est;
+				E e = p.item;
+				current = p.next;
+				action.accept(e);
+				if (list.modCount != expectedModCount)
+					throw new ConcurrentModificationException();
+				return true;
+			}
+			return false;
+		}
+
+		public int characteristics() {
+			return Spliterator.ORDERED | Spliterator.SIZED | Spliterator.SUBSIZED;
+		}
+	}
 
 }
