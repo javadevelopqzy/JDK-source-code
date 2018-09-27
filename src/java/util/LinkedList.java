@@ -831,24 +831,11 @@ public class LinkedList<E>
 	}
 
 	/**
-	 * Returns a list-iterator of the elements in this list (in proper
-	 * sequence), starting at the specified position in the list.
-	 * Obeys the general contract of {@code List.listIterator(int)}.<p>
-	 * <p>
-	 * The list-iterator is <i>fail-fast</i>: if the list is structurally
-	 * modified at any time after the Iterator is created, in any way except
-	 * through the list-iterator's own {@code remove} or {@code add}
-	 * methods, the list-iterator will throw a
-	 * {@code ConcurrentModificationException}.  Thus, in the face of
-	 * concurrent modification, the iterator fails quickly and cleanly, rather
-	 * than risking arbitrary, non-deterministic behavior at an undetermined
-	 * time in the future.
+	 * 返回指定索引的List迭代器对象
 	 *
-	 * @param index index of the first element to be returned from the
-	 *              list-iterator (by a call to {@code next})
-	 * @return a ListIterator of the elements in this list (in proper
-	 * sequence), starting at the specified position in the list
-	 * @throws IndexOutOfBoundsException {@inheritDoc}
+	 * @param index 指定索引
+	 * @return List迭代器对象
+	 * @throws IndexOutOfBoundsException index超出[0,size]会抛出此异常
 	 * @see List#listIterator(int)
 	 */
 	public ListIterator<E> listIterator(int index) {
@@ -856,14 +843,22 @@ public class LinkedList<E>
 		return new ListItr(index);
 	}
 
+	/**
+	 * list迭代器类，内部有并发修改校验
+	 */
 	private class ListItr implements ListIterator<E> {
+		// 最后一次返回的节点
 		private Node<E> lastReturned;
+		// 下一个节点（可能是前也可能是后）
 		private Node<E> next;
+		// 下一个索引
 		private int nextIndex;
+		// 并发修改的参考值
 		private int expectedModCount = modCount;
 
 		ListItr(int index) {
 			// assert isPositionIndex(index);
+			// 如果index == size，则从定位最后一个节点，next = null
 			next = (index == size) ? null : node(index);
 			nextIndex = index;
 		}
@@ -873,6 +868,7 @@ public class LinkedList<E>
 		}
 
 		public E next() {
+			// 并发检查和越界检查
 			checkForComodification();
 			if (!hasNext())
 				throw new NoSuchElementException();
@@ -888,10 +884,11 @@ public class LinkedList<E>
 		}
 
 		public E previous() {
+			// 并发检查和越界检查
 			checkForComodification();
 			if (!hasPrevious())
 				throw new NoSuchElementException();
-
+			// next = null 说明索引在size处
 			lastReturned = next = (next == null) ? last : next.prev;
 			nextIndex--;
 			return lastReturned.item;
@@ -905,13 +902,19 @@ public class LinkedList<E>
 			return nextIndex - 1;
 		}
 
+		/**
+		 * 移除最后一次返回的元素，该操作会把lastReturned = null
+		 * 因此不能连续两次调用此方法
+		 */
 		public void remove() {
+			// 并发检查
 			checkForComodification();
 			if (lastReturned == null)
 				throw new IllegalStateException();
 
 			Node<E> lastNext = lastReturned.next;
 			unlink(lastReturned);
+			// 上一次操作是previous时，next == lastReturned，所以需要指定next = lastNext
 			if (next == lastReturned)
 				next = lastNext;
 			else
@@ -920,13 +923,24 @@ public class LinkedList<E>
 			expectedModCount++;
 		}
 
+		/**
+		 * 设置定节点的元素值
+		 *
+		 * @param e
+		 */
 		public void set(E e) {
+			// 并发修改校验
 			if (lastReturned == null)
 				throw new IllegalStateException();
 			checkForComodification();
 			lastReturned.item = e;
 		}
 
+		/**
+		 * 添加元素会把lastReturned = null
+		 *
+		 * @param e
+		 */
 		public void add(E e) {
 			checkForComodification();
 			lastReturned = null;
@@ -938,6 +952,11 @@ public class LinkedList<E>
 			expectedModCount++;
 		}
 
+		/**
+		 * 循环对元素做修改
+		 *
+		 * @param action
+		 */
 		public void forEachRemaining(Consumer<? super E> action) {
 			Objects.requireNonNull(action);
 			while (modCount == expectedModCount && nextIndex < size) {
@@ -955,6 +974,9 @@ public class LinkedList<E>
 		}
 	}
 
+	/**
+	 * 存储链表节点
+	 */
 	private static class Node<E> {
 		E item;
 		Node<E> next;
@@ -968,6 +990,8 @@ public class LinkedList<E>
 	}
 
 	/**
+	 * 适配ListItr的降序迭代器，用得不多
+	 *
 	 * @since 1.6
 	 */
 	public Iterator<E> descendingIterator() {
@@ -975,7 +999,7 @@ public class LinkedList<E>
 	}
 
 	/**
-	 * Adapter to provide descending iterators via ListItr.previous
+	 * 适配ListItr的降序迭代器类
 	 */
 	private class DescendingIterator implements Iterator<E> {
 		private final ListItr itr = new ListItr(size());
@@ -993,6 +1017,11 @@ public class LinkedList<E>
 		}
 	}
 
+	/**
+	 * 克隆方法
+	 *
+	 * @return 返回当前对象的一个副本
+	 */
 	@SuppressWarnings("unchecked")
 	private LinkedList<E> superClone() {
 		try {
@@ -1003,10 +1032,9 @@ public class LinkedList<E>
 	}
 
 	/**
-	 * Returns a shallow copy of this {@code LinkedList}. (The elements
-	 * themselves are not cloned.)
+	 * 克隆方法
 	 *
-	 * @return a shallow copy of this {@code LinkedList} instance
+	 * @return 返回当前对象的一个副本
 	 */
 	public Object clone() {
 		LinkedList<E> clone = superClone();
@@ -1068,10 +1096,6 @@ public class LinkedList<E>
 
 	/**
 	 * 对象序列化的方法不管
-	 *
-	 * @serialData The size of the list (the number of elements it
-	 * contains) is emitted (int), followed by all of its
-	 * elements (each an Object) in the proper order.
 	 */
 	private void writeObject(java.io.ObjectOutputStream s)
 			throws java.io.IOException {
@@ -1104,15 +1128,9 @@ public class LinkedList<E>
 	}
 
 	/**
-	 * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
-	 * and <em>fail-fast</em> {@link Spliterator} over the elements in this
-	 * list.
+	 * 创建一个可分割的迭代器，为了更好并行遍历而设计的
 	 *
-	 * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
-	 * {@link Spliterator#ORDERED}.  Overriding implementations should document
-	 * the reporting of additional characteristic values.
-	 *
-	 * @return a {@code Spliterator} over the elements in this list
+	 * @return a 返回一个拥有此集合的并行迭代器
 	 * @implNote The {@code Spliterator} additionally reports {@link Spliterator#SUBSIZED}
 	 * and implements {@code trySplit} to permit limited parallelism..
 	 * @since 1.8
@@ -1126,12 +1144,12 @@ public class LinkedList<E>
 	 * A customized variant of Spliterators.IteratorSpliterator
 	 */
 	static final class LLSpliterator<E> implements Spliterator<E> {
-		static final int BATCH_UNIT = 1 << 10;  // batch array size increment
+		static final int BATCH_UNIT = 1 << 10;  // 批量数组大小的增量
 		static final int MAX_BATCH = 1 << 25;  // max batch array size;
-		final LinkedList<E> list; // null OK unless traversed
-		Node<E> current;      // current node; null until initialized
-		int est;              // size estimate; -1 until first needed
-		int expectedModCount; // initialized when est set
+		final LinkedList<E> list; // 当前容器
+		Node<E> current;      // 当前的元素，未初始化时为null
+		int est;              // 容器总大小，初始值为-1
+		int expectedModCount; // 期望修改的值，随着est一起初始化
 		int batch;            // batch size for splits
 
 		LLSpliterator(LinkedList<E> list, int est, int expectedModCount) {
@@ -1140,6 +1158,11 @@ public class LinkedList<E>
 			this.expectedModCount = expectedModCount;
 		}
 
+		/**
+		 * 获取容器大小，若没有初始化，则初始化
+		 *
+		 * @return 容器的大小
+		 */
 		final int getEst() {
 			int s; // force initialization
 			final LinkedList<E> lst;
@@ -1155,6 +1178,11 @@ public class LinkedList<E>
 			return s;
 		}
 
+		/**
+		 * 获取容器大小
+		 *
+		 * @return 容器的大小
+		 */
 		public long estimateSize() {
 			return (long) getEst();
 		}
