@@ -104,15 +104,14 @@ public class CopyOnWriteArrayList<E>
 	private transient volatile Object[] array;
 
 	/**
-	 * Gets the array.  Non-private so as to also be accessible
-	 * from CopyOnWriteArraySet class.
+	 * 给容器的数组提供get方法
 	 */
 	final Object[] getArray() {
 		return array;
 	}
 
 	/**
-	 * Sets the array.
+	 * 给容器的数组提供set方法
 	 */
 	final void setArray(Object[] a) {
 		array = a;
@@ -126,13 +125,15 @@ public class CopyOnWriteArrayList<E>
 	}
 
 	/**
-	 * 根据另外一个容器初始化新的ArrayList
+	 * 根据另外一个容器初始化新的CopyOnWriteArrayList
 	 *
 	 * @param c 容器
 	 * @throws NullPointerException 如果容器是空的抛出此异常
 	 */
 	public CopyOnWriteArrayList(Collection<? extends E> c) {
 		Object[] elements;
+		// 如果集合c是CopyOnWriteArrayList，直接去除array
+		// 否则先用c.toArray()，再把数组复制到当前的array中
 		if (c.getClass() == CopyOnWriteArrayList.class)
 			elements = ((CopyOnWriteArrayList<?>) c).getArray();
 		else {
@@ -145,10 +146,10 @@ public class CopyOnWriteArrayList<E>
 	}
 
 	/**
-	 * 根据另外一个数组初始化新的ArrayList
+	 * 根据另外一个数组初始化新的CopyOnWriteArrayList
 	 *
 	 * @param toCopyIn 数组
-	 * @throws NullPointerException 如果容器是空的抛出此异常
+	 * @throws NullPointerException 如果数组是空的抛出此异常
 	 */
 	public CopyOnWriteArrayList(E[] toCopyIn) {
 		setArray(Arrays.copyOf(toCopyIn, toCopyIn.length, Object[].class));
@@ -176,19 +177,17 @@ public class CopyOnWriteArrayList<E>
 	 * 比较两个对象是否相等，感觉直接用{@link Objects#equals(Object, Object)}也可
 	 */
 	private static boolean eq(Object o1, Object o2) {
-		Objects.equals(o1, o2);
 		return (o1 == null) ? o2 == null : o1.equals(o2);
 	}
 
 	/**
-	 * static version of indexOf, to allow repeated calls without
-	 * needing to re-acquire array each time.
+	 * 在数组elements中，从index到fence找出o第一次出现的位置
 	 *
-	 * @param o        element to search for
-	 * @param elements the array
-	 * @param index    first index to search
-	 * @param fence    one past last index to search
-	 * @return index of element, or -1 if absent
+	 * @param o        要查找的元素o
+	 * @param elements 数组elements
+	 * @param index    开始检索的索引
+	 * @param fence
+	 * @return 找到返回对应的索引，否则返回-1
 	 */
 	private static int indexOf(Object o, Object[] elements,
 	                           int index, int fence) {
@@ -205,12 +204,12 @@ public class CopyOnWriteArrayList<E>
 	}
 
 	/**
-	 * static version of lastIndexOf.
+	 * 在数组elements中，从0到index找出o最后一次出现的位置
 	 *
-	 * @param o        element to search for
-	 * @param elements the array
-	 * @param index    first index to search
-	 * @return index of element, or -1 if absent
+	 * @param o        要查找的元素o
+	 * @param elements 数组elements
+	 * @param index    最大索引
+	 * @return 找到返回对应的索引，否则返回-1
 	 */
 	private static int lastIndexOf(Object o, Object[] elements, int index) {
 		if (o == null) {
@@ -226,13 +225,10 @@ public class CopyOnWriteArrayList<E>
 	}
 
 	/**
-	 * Returns {@code true} if this list contains the specified element.
-	 * More formally, returns {@code true} if and only if this list contains
-	 * at least one element {@code e} such that
-	 * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>.
+	 * 判断集合是否包含元素o，内部使用{@link CopyOnWriteArrayList#indexOf(Object)} 方法
 	 *
-	 * @param o element whose presence in this list is to be tested
-	 * @return {@code true} if this list contains the specified element
+	 * @param o 元素
+	 * @return 包含返回true，否则返回false
 	 */
 	public boolean contains(Object o) {
 		Object[] elements = getArray();
@@ -240,7 +236,7 @@ public class CopyOnWriteArrayList<E>
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 外部使用的indexOf方法
 	 */
 	public int indexOf(Object o) {
 		Object[] elements = getArray();
@@ -248,19 +244,12 @@ public class CopyOnWriteArrayList<E>
 	}
 
 	/**
-	 * Returns the index of the first occurrence of the specified element in
-	 * this list, searching forwards from {@code index}, or returns -1 if
-	 * the element is not found.
-	 * More formally, returns the lowest index {@code i} such that
-	 * <tt>(i&nbsp;&gt;=&nbsp;index&nbsp;&amp;&amp;&nbsp;(e==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;e.equals(get(i))))</tt>,
-	 * or -1 if there is no such index.
+	 * 外部使用的indexOf方法，从index开始查找元素e第一次出现的位置
 	 *
-	 * @param e     element to search for
-	 * @param index index to start searching from
-	 * @return the index of the first occurrence of the element in
-	 * this list at position {@code index} or later in the list;
-	 * {@code -1} if the element is not found.
-	 * @throws IndexOutOfBoundsException if the specified index is negative
+	 * @param e     元素
+	 * @param index 开始的索引
+	 * @return 找到返回对应的索引，否则返回-1
+	 * @throws IndexOutOfBoundsException 如果index是负数
 	 */
 	public int indexOf(E e, int index) {
 		Object[] elements = getArray();
@@ -268,7 +257,7 @@ public class CopyOnWriteArrayList<E>
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 外部使用的lastIndexOf方法
 	 */
 	public int lastIndexOf(Object o) {
 		Object[] elements = getArray();
@@ -276,20 +265,12 @@ public class CopyOnWriteArrayList<E>
 	}
 
 	/**
-	 * Returns the index of the last occurrence of the specified element in
-	 * this list, searching backwards from {@code index}, or returns -1 if
-	 * the element is not found.
-	 * More formally, returns the highest index {@code i} such that
-	 * <tt>(i&nbsp;&lt;=&nbsp;index&nbsp;&amp;&amp;&nbsp;(e==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;e.equals(get(i))))</tt>,
-	 * or -1 if there is no such index.
+	 * 外部使用的indexOf方法，从0到index开始查找元素e最后一次出现的位置
 	 *
-	 * @param e     element to search for
-	 * @param index index to start searching backwards from
-	 * @return the index of the last occurrence of the element at position
-	 * less than or equal to {@code index} in this list;
-	 * -1 if the element is not found.
-	 * @throws IndexOutOfBoundsException if the specified index is greater
-	 *                                   than or equal to the current size of this list
+	 * @param e     元素
+	 * @param index 开始的索引
+	 * @return 找到返回对应的索引，否则返回-1
+	 * @throws IndexOutOfBoundsException 如果index超出容器的大小
 	 */
 	public int lastIndexOf(E e, int index) {
 		Object[] elements = getArray();
@@ -402,8 +383,8 @@ public class CopyOnWriteArrayList<E>
 	}
 
 	/**
-	 * Replaces the element at the specified position in this list with the
-	 * specified element.
+	 * 把index位置的元素替换为element <br>
+	 * <b> 注意：volatile只针对数据引用有效，即修改数组的内部元素但不重新给数组重新赋值，别的线程依然无法拿到最新的数组元素</b>
 	 *
 	 * @throws IndexOutOfBoundsException {@inheritDoc}
 	 */
@@ -419,7 +400,9 @@ public class CopyOnWriteArrayList<E>
 				Object[] newElements = Arrays.copyOf(elements, len);
 				newElements[index] = element;
 				setArray(newElements);
-			} else {
+			}
+			// 确保volatile的语义性
+			else {
 				// Not quite a no-op; ensures volatile write semantics
 				setArray(elements);
 			}
