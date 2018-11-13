@@ -186,7 +186,7 @@ public class CopyOnWriteArrayList<E>
 	 * @param o        要查找的元素o
 	 * @param elements 数组elements
 	 * @param index    开始检索的索引
-	 * @param fence
+	 * @param fence    结束的索引
 	 * @return 找到返回对应的索引，否则返回-1
 	 */
 	private static int indexOf(Object o, Object[] elements,
@@ -390,13 +390,16 @@ public class CopyOnWriteArrayList<E>
 	 */
 	public E set(int index, E element) {
 		final ReentrantLock lock = this.lock;
+		// 加锁
 		lock.lock();
 		try {
 			Object[] elements = getArray();
+			// 获取旧值
 			E oldValue = get(elements, index);
 
 			if (oldValue != element) {
 				int len = elements.length;
+				// 为保证数组元素的可见性，需要数组复制，再覆盖原数组
 				Object[] newElements = Arrays.copyOf(elements, len);
 				newElements[index] = element;
 				setArray(newElements);
@@ -424,8 +427,10 @@ public class CopyOnWriteArrayList<E>
 		try {
 			Object[] elements = getArray();
 			int len = elements.length;
+			// 保证数组元素可见性，需要先复制再重新赋值
 			Object[] newElements = Arrays.copyOf(elements, len + 1);
 			newElements[len] = e;
+			// 重新覆盖容器
 			setArray(newElements);
 			return true;
 		} finally {
