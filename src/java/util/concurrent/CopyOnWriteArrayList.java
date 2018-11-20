@@ -451,19 +451,24 @@ public class CopyOnWriteArrayList<E>
 		try {
 			Object[] elements = getArray();
 			int len = elements.length;
+			// 越界校验
 			if (index > len || index < 0)
 				throw new IndexOutOfBoundsException("Index: " + index +
 						", Size: " + len);
 			Object[] newElements;
 			int numMoved = len - index;
+			// 如果是index = size，直接在最后一个元素赋值
 			if (numMoved == 0)
 				newElements = Arrays.copyOf(elements, len + 1);
 			else {
 				newElements = new Object[len + 1];
+				// 以index分割，复制原数组的前半部分
 				System.arraycopy(elements, 0, newElements, 0, index);
+				// 以index分割，复制原数组的后半部分
 				System.arraycopy(elements, index, newElements, index + 1,
 						numMoved);
 			}
+			// 赋值
 			newElements[index] = element;
 			setArray(newElements);
 		} finally {
