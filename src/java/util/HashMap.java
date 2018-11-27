@@ -675,14 +675,19 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final Node<K,V>[] resize() {
         Node<K,V>[] oldTab = table;
+        // 目前的最大长度
         int oldCap = (oldTab == null) ? 0 : oldTab.length;
+        // 目前已用长度
         int oldThr = threshold;
         int newCap, newThr = 0;
+        // 已经初始化过
         if (oldCap > 0) {
+        	// 目前最大长度已经超出上限
             if (oldCap >= MAXIMUM_CAPACITY) {
                 threshold = Integer.MAX_VALUE;
                 return oldTab;
             }
+            // 目前最大长度 * 2 没有达上限，且目前最大长度 >= 16，直接 * 2
             else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
                      oldCap >= DEFAULT_INITIAL_CAPACITY)
                 newThr = oldThr << 1; // double threshold
@@ -693,6 +698,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             newCap = DEFAULT_INITIAL_CAPACITY;
             newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
         }
+        // 正常扩容 新的阈值 = 旧 * 2 * 负载因子
         if (newThr == 0) {
             float ft = (float)newCap * loadFactor;
             newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
@@ -701,8 +707,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         threshold = newThr;
         @SuppressWarnings({"rawtypes","unchecked"})
             Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+
         table = newTab;
         if (oldTab != null) {
+        	// 把旧的元素复制到新的table里面
             for (int j = 0; j < oldCap; ++j) {
                 Node<K,V> e;
                 if ((e = oldTab[j]) != null) {
