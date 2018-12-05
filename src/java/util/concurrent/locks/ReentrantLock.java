@@ -113,7 +113,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * into fair and nonfair versions below. Uses AQS state to
      * represent the number of holds on the lock.
      */
-    abstract static class Sync extends AbstractQueuedSynchronizer {
+	/**
+	 * 继承AQS类，是公平锁和非公平锁的基类
+	 */
+	abstract static class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = -5179523762034025860L;
 
         /**
@@ -195,7 +198,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     /**
      * Sync object for non-fair locks
      */
-    static final class NonfairSync extends Sync {
+	/**
+	 * 非公平锁的实现
+	 */
+	static final class NonfairSync extends Sync {
         private static final long serialVersionUID = 7316153563782823691L;
 
         /**
@@ -217,6 +223,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     /**
      * Sync object for fair locks
      */
+	/**
+	 * 公平锁的实现
+	 */
     static final class FairSync extends Sync {
         private static final long serialVersionUID = -3000897897090466540L;
 
@@ -253,7 +262,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * Creates an instance of {@code ReentrantLock}.
      * This is equivalent to using {@code ReentrantLock(false)}.
      */
-    public ReentrantLock() {
+	/**
+	 * 创建一个非公平锁的ReentrantLock
+	 */
+	public ReentrantLock() {
         sync = new NonfairSync();
     }
 
@@ -263,6 +275,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * @param fair {@code true} if this lock should use a fair ordering policy
      */
+	/**
+	 * 创建一个ReentrantLock，true表示公平锁，false表示非公平
+	 */
     public ReentrantLock(boolean fair) {
         sync = fair ? new FairSync() : new NonfairSync();
     }
@@ -281,7 +296,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * purposes and lies dormant until the lock has been acquired,
      * at which time the lock hold count is set to one.
      */
-    public void lock() {
+	/**
+	 * 获取锁：（1）如果获取到直接返回。（2）如果当前线程已经持有锁，则锁次数+1，并直接返回。（3）如果未获取到，则阻塞到获取到为止，获取到之后锁次数设为1
+	 */
+	public void lock() {
         sync.lock();
     }
 
@@ -331,7 +349,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * @throws InterruptedException if the current thread is interrupted
      */
-    public void lockInterruptibly() throws InterruptedException {
+	/**
+	 * 获取锁，如果获取不到可以被打断，打断之后抛出InterruptedException
+	 */
+	public void lockInterruptibly() throws InterruptedException {
         sync.acquireInterruptibly(1);
     }
 
@@ -361,6 +382,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *         current thread, or the lock was already held by the current
      *         thread; and {@code false} otherwise
      */
+	/**
+	 * 尝试获取锁，如果获取不到，则返回false（不阻塞），获取到了返回true
+	 */
     public boolean tryLock() {
         return sync.nonfairTryAcquire(1);
     }
@@ -437,6 +461,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @throws InterruptedException if the current thread is interrupted
      * @throws NullPointerException if the time unit is null
      */
+	/**
+	 * 尝试获取锁，如果获取不到在指定的时间内不断尝试，超时或者线程被打断之后再获取不到，返回false，能获取到都返回true
+	 */
     public boolean tryLock(long timeout, TimeUnit unit)
             throws InterruptedException {
         return sync.tryAcquireNanos(1, unit.toNanos(timeout));
@@ -453,7 +480,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @throws IllegalMonitorStateException if the current thread does not
      *         hold this lock
      */
-    public void unlock() {
+	/**
+	 * 释放锁，如果当前线程没有获取到锁，抛出IllegalMonitorStateException
+	 */
+	public void unlock() {
         sync.release(1);
     }
 
@@ -529,7 +559,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @return the number of holds on this lock by the current thread,
      *         or zero if this lock is not held by the current thread
      */
-    public int getHoldCount() {
+	/**
+	 * 返回当前线程获取锁的次数
+	 */
+	public int getHoldCount() {
         return sync.getHoldCount();
     }
 
@@ -574,6 +607,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @return {@code true} if current thread holds this lock and
      *         {@code false} otherwise
      */
+	/**
+	 * 判断当前线程是否持有锁
+	 */
     public boolean isHeldByCurrentThread() {
         return sync.isHeldExclusively();
     }
@@ -586,6 +622,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @return {@code true} if any thread holds this lock and
      *         {@code false} otherwise
      */
+	/**
+	 * 判断锁是否已经被持有
+	 */
     public boolean isLocked() {
         return sync.isLocked();
     }
@@ -595,6 +634,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * @return {@code true} if this lock has fairness set true
      */
+	/**
+	 * 判断锁是否是公平的
+	 */
     public final boolean isFair() {
         return sync instanceof FairSync;
     }
@@ -612,7 +654,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * @return the owner, or {@code null} if not owned
      */
-    protected Thread getOwner() {
+	/**
+	 * 该方法不公开，获取持有锁的线程，如果没有线程持有返回null
+	 */
+	protected Thread getOwner() {
         return sync.getOwner();
     }
 
@@ -626,7 +671,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @return {@code true} if there may be other threads waiting to
      *         acquire the lock
      */
-    public final boolean hasQueuedThreads() {
+	/**
+	 * 判断是否有线程在等待锁释放
+	 */
+	public final boolean hasQueuedThreads() {
         return sync.hasQueuedThreads();
     }
 
@@ -641,7 +689,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @return {@code true} if the given thread is queued waiting for this lock
      * @throws NullPointerException if the thread is null
      */
-    public final boolean hasQueuedThread(Thread thread) {
+	/**
+	 * 判断目标线程是否在等待锁释放
+	 */
+	public final boolean hasQueuedThread(Thread thread) {
         return sync.isQueued(thread);
     }
 
@@ -655,7 +706,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * @return the estimated number of threads waiting for this lock
      */
-    public final int getQueueLength() {
+	/**
+	 * 获取等待获取锁的线程数
+	 */
+	public final int getQueueLength() {
         return sync.getQueueLength();
     }
 
@@ -670,7 +724,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * @return the collection of threads
      */
-    protected Collection<Thread> getQueuedThreads() {
+	/**
+	 * 该方法给子类实现，获取等待锁的所有线程
+	 */
+	protected Collection<Thread> getQueuedThreads() {
         return sync.getQueuedThreads();
     }
 
@@ -689,6 +746,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *         not associated with this lock
      * @throws NullPointerException if the condition is null
      */
+	/**
+	 * 公开方法，判断是否有线程在condition.await
+	 */
     public boolean hasWaiters(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
@@ -712,7 +772,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *         not associated with this lock
      * @throws NullPointerException if the condition is null
      */
-    public int getWaitQueueLength(Condition condition) {
+	/**
+	 * 公开方法，获取在condition.await的线程个数
+	 */
+	public int getWaitQueueLength(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
         if (!(condition instanceof AbstractQueuedSynchronizer.ConditionObject))
@@ -737,7 +800,10 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *         not associated with this lock
      * @throws NullPointerException if the condition is null
      */
-    protected Collection<Thread> getWaitingThreads(Condition condition) {
+	/**
+	 * 该方法由子类调用，获取等待条件锁的线程集合
+	 */
+	protected Collection<Thread> getWaitingThreads(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
         if (!(condition instanceof AbstractQueuedSynchronizer.ConditionObject))

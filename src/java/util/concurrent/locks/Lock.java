@@ -181,6 +181,9 @@ public interface Lock {
      * circumstances and the exception type must be documented by that
      * {@code Lock} implementation.
      */
+    /**
+     * 获取锁，如果lock正在被其他线程持有，则阻塞到能获得为止
+     */
     void lock();
 
     /**
@@ -229,7 +232,10 @@ public interface Lock {
      *         interrupted while acquiring the lock (and interruption
      *         of lock acquisition is supported)
      */
-    void lockInterruptibly() throws InterruptedException;
+	/**
+	 * 获取锁，如果获取不到阻塞，阻塞的线程可以被打断，如果被打断则抛出InterruptedException异常
+	 */
+	void lockInterruptibly() throws InterruptedException;
 
     /**
      * Acquires the lock only if it is free at the time of invocation.
@@ -258,7 +264,10 @@ public interface Lock {
      * @return {@code true} if the lock was acquired and
      *         {@code false} otherwise
      */
-    boolean tryLock();
+	/**
+	 * 尝试获取锁，如果获取不到，则返回false（不阻塞），获取到了返回true
+	 */
+	boolean tryLock();
 
     /**
      * Acquires the lock if it is free within the given waiting time and the
@@ -318,7 +327,10 @@ public interface Lock {
      *         while acquiring the lock (and interruption of lock
      *         acquisition is supported)
      */
-    boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
+	/**
+	 * 尝试获取锁，如果获取不到在指定的时间内不断尝试，超时或者线程被打断之后再获取不到，返回false，能获取到都返回true
+	 */
+	boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
 
     /**
      * Releases the lock.
@@ -332,7 +344,10 @@ public interface Lock {
      * Any restrictions and the exception
      * type must be documented by that {@code Lock} implementation.
      */
-    void unlock();
+	/**
+	 * 释放锁
+	 */
+	void unlock();
 
     /**
      * Returns a new {@link Condition} instance that is bound to this
@@ -353,5 +368,8 @@ public interface Lock {
      * @throws UnsupportedOperationException if this {@code Lock}
      *         implementation does not support conditions
      */
-    Condition newCondition();
+	/**
+	 * 创建一个Condition对象，该对象使用方式类似于wait-notify机制
+	 */
+	Condition newCondition();
 }
