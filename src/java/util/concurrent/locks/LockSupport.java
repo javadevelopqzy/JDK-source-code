@@ -34,8 +34,6 @@
  */
 
 package java.util.concurrent.locks;
-import sun.misc.Unsafe;
-
 /**
  * Basic thread blocking primitives for creating locks and other
  * synchronization classes.
@@ -136,6 +134,7 @@ public class LockSupport {
      * @param thread the thread to unpark, or {@code null}, in which case
      *        this operation has no effect
      */
+    // 激活被park的线程thread，如果线程没有开启则啥都不做
     public static void unpark(Thread thread) {
         if (thread != null)
             UNSAFE.unpark(thread);
@@ -169,6 +168,7 @@ public class LockSupport {
      *        thread parking
      * @since 1.6
      */
+    // 一样是挂起线程，传入对象为线程的阻塞对象 ？？？
     public static void park(Object blocker) {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
@@ -208,6 +208,7 @@ public class LockSupport {
      * @param nanos the maximum number of nanoseconds to wait
      * @since 1.6
      */
+    // 挂起当前线程，等到当前时间过后nanos秒，自动运行
     public static void parkNanos(Object blocker, long nanos) {
         if (nanos > 0) {
             Thread t = Thread.currentThread();
@@ -250,6 +251,7 @@ public class LockSupport {
      *        to wait until
      * @since 1.6
      */
+    // 挂起当前线程，等到deadline时，自动运行
     public static void parkUntil(Object blocker, long deadline) {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
@@ -300,6 +302,10 @@ public class LockSupport {
      * the thread to park in the first place. Callers may also determine,
      * for example, the interrupt status of the thread upon return.
      */
+    // 挂起当前线程，并进行线程调度。
+    // 如果许可成可用，会立即返回。许可证不可用则当前线程休眠，除非发生以下事情：
+    // （1）别的线程调用unpark并且以此线程作为目的。（2）别的线程调用interrupt打断此线程。（3）不合逻辑的返回
+    // 此方法不会指示线程因为什么原因返回
     public static void park() {
         UNSAFE.park(false, 0L);
     }

@@ -1732,6 +1732,13 @@ class Thread implements Runnable {
      * @since   1.5
      * @see #getState
      */
+    // 线程状态的枚举，每个线程只能同时有一种状态。
+    // （1）NEW：新建出来，还没有调用start方法。
+    // （2）RUNNABLE：正在执行代码的线程。
+    // （3）BLOCKED：阻塞，被synchronized阻塞的状态，不可以被中断。
+    // （4）WAITING：等待被其他线程主动唤醒的状态，不可以被中断。如：调用wait、park等方法的线程。
+    // （5）TIMED_WAITING：限时等待，调用Thread.sleep的线程，可以被中断
+    // （6）TERMINATED：已经退出的线程
     public enum State {
         /**
          * Thread state for a thread which has not yet started.
@@ -1805,6 +1812,7 @@ class Thread implements Runnable {
      * @return this thread's state.
      * @since 1.5
      */
+    // 获取线程的状态
     public State getState() {
         // get current thread state
         return sun.misc.VM.toThreadState(threadStatus);
