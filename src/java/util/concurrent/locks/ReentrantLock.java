@@ -129,10 +129,12 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * Performs non-fair tryLock.  tryAcquire is implemented in
          * subclasses, but both need nonfair try for trylock method.
          */
+        // 非公平锁尝试获取锁时调用
+        // 判断状态=0尝试获取锁，如果当前线程已经持有锁，则state++
         final boolean nonfairTryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
             int c = getState();
-            // state = 0 表示线程获取到锁，进行一次获取锁尝试
+            // state = 0表示没有线程占用锁，进行一次获取锁尝试
             if (c == 0) {
             	// 成功获取到锁，设为独占
                 if (compareAndSetState(0, acquires)) {
@@ -153,15 +155,20 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             return false;
         }
 
+        // 释放锁
         protected final boolean tryRelease(int releases) {
+        	// 状态-标记位(值是1)
             int c = getState() - releases;
+            // 当前线程不持有锁，报错
             if (Thread.currentThread() != getExclusiveOwnerThread())
                 throw new IllegalMonitorStateException();
             boolean free = false;
+            // 线程只持有一次锁，直接释放
             if (c == 0) {
                 free = true;
                 setExclusiveOwnerThread(null);
             }
+            // 设置状态
             setState(c);
             return free;
         }
@@ -219,6 +226,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             	// 设置当前线程获得独占锁
                 setExclusiveOwnerThread(Thread.currentThread());
             else
+            	// 上面没有获取到锁，则调用AQS进一步尝试
                 acquire(1);
         }
 
@@ -245,10 +253,12 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * Fair version of tryAcquire.  Don't grant access unless
          * recursive call or no waiters or is first.
          */
+        // 获取公平锁
         protected final boolean tryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
             int c = getState();
             if (c == 0) {
+            	// 这里是关键，判断是否有线程等待比当前线程久
                 if (!hasQueuedPredecessors() &&
                     compareAndSetState(0, acquires)) {
                     setExclusiveOwnerThread(current);

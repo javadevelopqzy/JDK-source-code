@@ -613,6 +613,7 @@ public abstract class AbstractQueuedSynchronizer
      * @return node's predecessor
      */
     // 插入一个节点到队尾中
+    // 这里导致非公平的出现，因为并发进入这个方法之后，入队的顺序是没有保障的
     private Node enq(final Node node) {
     	// 典型的无锁机制，使用CAS无限尝试，直到成功
         for (;;) {
@@ -643,8 +644,10 @@ public abstract class AbstractQueuedSynchronizer
         Node node = new Node(Thread.currentThread(), mode);
         // Try the fast path of enq; backup to full enq on failure
         Node pred = tail;
+        // 已经初始化，尝试把当前节点直接加到尾部
         if (pred != null) {
             node.prev = pred;
+            // 加入成功直接return
             if (compareAndSetTail(pred, node)) {
                 pred.next = node;
                 return node;
@@ -673,6 +676,7 @@ public abstract class AbstractQueuedSynchronizer
      *
      * @param node the node
      */
+    // 唤醒被park的线程，唤醒头结点的下一个线程
     private void unparkSuccessor(Node node) {
         /*
          * If status is negative (i.e., possibly needing signal) try
@@ -831,7 +835,7 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if thread should block
      */
     // 返回是否需要park当前线程，如果上一个节点状态是SIGNAL需要park
-    // 如果状态没有初始化，设置waitStatus = Node.SIGNAL
+    // 如果上一个节点状态没有初始化，设置上一个节点waitStatus = Node.SIGNAL
     private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
         int ws = pred.waitStatus;
         if (ws == Node.SIGNAL)
@@ -863,6 +867,7 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Convenience method to interrupt current thread.
      */
+    // 中断当前线程
     static void selfInterrupt() {
         Thread.currentThread().interrupt();
     }
@@ -899,6 +904,7 @@ public abstract class AbstractQueuedSynchronizer
     final boolean acquireQueued(final Node node, int arg) {
         boolean failed = true;
         try {
+        	// 表示是否被中断
             boolean interrupted = false;
             for (;;) {
             	// 获取上一个节点
@@ -912,7 +918,7 @@ public abstract class AbstractQueuedSynchronizer
                     // 返回是否线程已经被打断
                     return interrupted;
                 }
-                // 上一个节点不是head或者没有获取到锁
+                // 上一个节点不是head或者是head但没有获取到锁
                 if (shouldParkAfterFailedAcquire(p, node) &&
 		                // park当前线程，返回是否已经被打断
                     parkAndCheckInterrupt())
@@ -1244,11 +1250,13 @@ public abstract class AbstractQueuedSynchronizer
      */
     // 竞争独占锁
     public final void acquire(int arg) {
-    	// 先尝试获取
+    	// 先尝试获取，获取得到直接返回
         if (!tryAcquire(arg) &&
-		        // 尝试获取失败，把独占锁加入到队尾(ReentrantLock：Node.EXCLUSIVE = null)
-		        // addWaiter返回一个包含当前线程的结点，acquireQueued竞争锁，2次尝试不成功则park当前线程
+		        // 尝试获取失败，把绑定当前线程、下一个node是独占锁的Node加入到队尾(ReentrantLock：Node.EXCLUSIVE = null)
+		        // addWaiter返回一个包含当前线程的结点。
+		        // acquireQueued竞争锁，2次尝试不成功则park当前线程
             acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+        	// 如果park被中断，则中断当前线程
             selfInterrupt();
     }
 
@@ -1309,7 +1317,9 @@ public abstract class AbstractQueuedSynchronizer
      *        can represent anything you like.
      * @return the value returned from {@link #tryRelease}
      */
+    // 释放独占锁
     public final boolean release(int arg) {
+    	// 返回true表示释放成功，否则释放失败
         if (tryRelease(arg)) {
             Node h = head;
             if (h != null && h.waitStatus != 0)
