@@ -70,6 +70,9 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @since   JDK1.1
      */
+    /**
+     * 原始类型，不占用内存
+     */
     @SuppressWarnings("unchecked")
     public static final Class<Long>     TYPE = (Class<Long>) Class.getPrimitiveClass("long");
 
@@ -935,6 +938,7 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @serial
      */
+    // 内部基本类型，占用8b的内存
     private final long value;
 
     /**
