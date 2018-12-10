@@ -524,11 +524,13 @@ public class ThreadLocal<T> {
             Entry[] tab = table;
             int len = tab.length;
             int i = key.threadLocalHashCode & (len-1);
+            // 通过hash找到索引，并删除
             for (Entry e = tab[i];
                  e != null;
                  e = tab[i = nextIndex(i, len)]) {
                 if (e.get() == key) {
                     e.clear();
+                    // 清理已经作废的Entry
                     expungeStaleEntry(i);
                     return;
                 }
