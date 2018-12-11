@@ -163,6 +163,7 @@ class Thread implements Runnable {
     private Runnable target;
 
     /* The group of this thread */
+    // 线程所属的线程组
     private ThreadGroup group;
 
     /* The context ClassLoader for this thread */
