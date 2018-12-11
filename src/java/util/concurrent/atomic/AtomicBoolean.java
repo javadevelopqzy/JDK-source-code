@@ -47,6 +47,7 @@ import sun.misc.Unsafe;
  * @since 1.5
  * @author Doug Lea
  */
+// 使用int控制，只是int的值只能是1或0
 public class AtomicBoolean implements java.io.Serializable {
     private static final long serialVersionUID = 4654671469794556979L;
     // setup to use Unsafe.compareAndSwapInt for updates
