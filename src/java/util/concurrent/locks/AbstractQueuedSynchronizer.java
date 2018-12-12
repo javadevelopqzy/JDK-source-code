@@ -1040,6 +1040,7 @@ public abstract class AbstractQueuedSynchronizer
             for (;;) {
                 final Node p = node.predecessor();
                 if (p == head) {
+                	// 如果上一个节点是头结点，再尝试
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {
                         setHeadAndPropagate(node, r);
@@ -1363,6 +1364,7 @@ public abstract class AbstractQueuedSynchronizer
             throws InterruptedException {
         if (Thread.interrupted())
             throw new InterruptedException();
+        // < 0说明没有达到single的条件
         if (tryAcquireShared(arg) < 0)
             doAcquireSharedInterruptibly(arg);
     }
@@ -1401,7 +1403,9 @@ public abstract class AbstractQueuedSynchronizer
      * @return the value returned from {@link #tryReleaseShared}
      */
     public final boolean releaseShared(int arg) {
+    	// countdown实现tryReleaseShared，如果state-1最后一个返回true，进行release
         if (tryReleaseShared(arg)) {
+        	// 激活head之后所有被park的线程
             doReleaseShared();
             return true;
         }

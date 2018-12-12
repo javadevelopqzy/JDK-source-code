@@ -158,6 +158,7 @@ public class CountDownLatch {
      * Synchronization control For CountDownLatch.
      * Uses AQS state to represent count.
      */
+    // 继承AQS，state代表count
     private static final class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = 4982264981922014374L;
 
@@ -169,6 +170,7 @@ public class CountDownLatch {
             return getState();
         }
 
+        // 尝试获取共享锁，如果没有state=0说明countdown可以激活线程
         protected int tryAcquireShared(int acquires) {
             return (getState() == 0) ? 1 : -1;
         }
@@ -176,10 +178,12 @@ public class CountDownLatch {
         protected boolean tryReleaseShared(int releases) {
             // Decrement count; signal when transition to zero
             for (;;) {
+            	// count=0返回false
                 int c = getState();
                 if (c == 0)
                     return false;
                 int nextc = c-1;
+                // 每次countdown时，c=state-1，state-1，返回减过之后c是否=0
                 if (compareAndSetState(c, nextc))
                     return nextc == 0;
             }
@@ -195,6 +199,7 @@ public class CountDownLatch {
      *        before threads can pass through {@link #await}
      * @throws IllegalArgumentException if {@code count} is negative
      */
+    // 创建一个内部的Sync
     public CountDownLatch(int count) {
         if (count < 0) throw new IllegalArgumentException("count < 0");
         this.sync = new Sync(count);
@@ -228,6 +233,7 @@ public class CountDownLatch {
      *         while waiting
      */
     public void await() throws InterruptedException {
+    	// 直接调用AQS中的方法进行park
         sync.acquireSharedInterruptibly(1);
     }
 
