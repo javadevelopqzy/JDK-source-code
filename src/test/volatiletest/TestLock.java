@@ -1,4 +1,4 @@
-package test.lock;
+package test.volatiletest;
 
 public class TestLock {
 

@@ -1,4 +1,4 @@
-package test.lock;
+package test.volatiletest;
 
 import java.util.concurrent.locks.*;
 
