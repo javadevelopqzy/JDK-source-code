@@ -658,6 +658,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
         }
         ++modCount;
+        // 比阈值大的时候扩容
         if (++size > threshold)
             resize();
         afterNodeInsertion(evict);
@@ -673,6 +674,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      *
      * @return the table
      */
+    // 扩容方法
     final Node<K,V>[] resize() {
         Node<K,V>[] oldTab = table;
         // 目前的最大长度

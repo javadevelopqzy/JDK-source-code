@@ -1232,6 +1232,8 @@ class Thread implements Runnable {
      *          <i>interrupted status</i> of the current thread is
      *          cleared when this exception is thrown.
      */
+    // 这里加了synchronized，即调用此方法的thread对象被监听
+    // 调用join()时传入0
     public final synchronized void join(long millis)
     throws InterruptedException {
         long base = System.currentTimeMillis();
@@ -1242,7 +1244,10 @@ class Thread implements Runnable {
         }
 
         if (millis == 0) {
+            // 如果线程还存活则直接调用wait阻塞主线程
+            // 当子线程结束后会调用，notifyAll()唤醒主线程
             while (isAlive()) {
+                // 因为方法上加了synchronized，因此这里wait没毛病
                 wait(0);
             }
         } else {
