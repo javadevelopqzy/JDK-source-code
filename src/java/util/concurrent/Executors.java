@@ -34,15 +34,12 @@
  */
 
 package java.util.concurrent;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
-import java.security.AccessControlException;
 import sun.security.util.SecurityConstants;
+
+import java.security.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Factory and utility methods for {@link Executor}, {@link
@@ -85,6 +82,7 @@ public class Executors {
      * @return the newly created thread pool
      * @throws IllegalArgumentException if {@code nThreads <= 0}
      */
+    // 创建固定线程的线程池，使用LinkedBlockingQueue，即队列无限
     public static ExecutorService newFixedThreadPool(int nThreads) {
         return new ThreadPoolExecutor(nThreads, nThreads,
                                       0L, TimeUnit.MILLISECONDS,
@@ -212,10 +210,11 @@ public class Executors {
      *
      * @return the newly created thread pool
      */
+    // 创建max=无限线程池，使用SynchronousQueue，每有一个任务就创建一个线程
     public static ExecutorService newCachedThreadPool() {
         return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
                                       60L, TimeUnit.SECONDS,
-                                      new SynchronousQueue<Runnable>());
+                              new SynchronousQueue<Runnable>());
     }
 
     /**
