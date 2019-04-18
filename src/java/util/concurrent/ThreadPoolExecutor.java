@@ -928,7 +928,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         boolean workerAdded = false;
         Worker w = null;
         try {
-            // 创建一个Worker对象，Worker对象实现了阻塞锁，并且包含用于执行runable对象的线程对象，runable对象
+            // 创建一个Worker对象，Worker对象实现了阻塞锁，并且包含用于执行runnable对象的线程对象，runnable对象
             w = new Worker(firstTask);
             // 获得Worker对象中的线程对象，预备执行
             final Thread t = w.thread;
@@ -1086,7 +1086,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 // timed为true说明此线程应该要被退出，则等待keepAliveTime之后获取队列元素
                 // 当没有获取到任务时则timedOut为true，重复上述操作，到上一行if判断即结束
                 // 线程保持的核心代码
-                // timed为false则，调用take()获取任务，若没任务则阻塞至，有任务调用addWorker方法，加入队列为止
+                // timed为false则，调用take()获取任务，若没任务则阻塞至有任务调用addWorker方法加入队列为止
                 Runnable r = timed ?
                     workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
                     workQueue.take();
