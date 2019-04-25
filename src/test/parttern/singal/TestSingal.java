@@ -1,4 +1,4 @@
-package test.singal;
+package test.parttern.singal;
 
 public class TestSingal {
 

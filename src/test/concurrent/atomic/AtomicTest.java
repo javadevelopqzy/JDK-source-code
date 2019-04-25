@@ -1,4 +1,4 @@
-package test.atomic;
+package test.concurrent.atomic;
 
 import java.util.concurrent.atomic.*;
 
