@@ -624,17 +624,22 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
                    boolean evict) {
         Node<K,V>[] tab; Node<K,V> p; int n, i;
+        // 没有初始化过，先初始化
         if ((tab = table) == null || (n = tab.length) == 0)
             n = (tab = resize()).length;
+        // 取hash之后，桶还没有元素，则直接放到桶中
         if ((p = tab[i = (n - 1) & hash]) == null)
             tab[i] = newNode(hash, key, value, null);
         else {
             Node<K,V> e; K k;
+            // 元素相同直接覆盖了
             if (p.hash == hash &&
                 ((k = p.key) == key || (key != null && key.equals(k))))
                 e = p;
+            // 元素没有覆盖，之前已经转为红黑树，则直接使用红黑树的算法
             else if (p instanceof TreeNode)
                 e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+            // 元素没有覆盖，则按照链表放到后一个
             else {
                 for (int binCount = 0; ; ++binCount) {
                     if ((e = p.next) == null) {
