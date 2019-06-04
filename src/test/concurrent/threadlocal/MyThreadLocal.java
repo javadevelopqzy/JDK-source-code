@@ -1,4 +1,4 @@
-package test.threadlocal;
+package test.concurrent.threadlocal;
 
 public class MyThreadLocal<T> extends ThreadLocal<T> {
 

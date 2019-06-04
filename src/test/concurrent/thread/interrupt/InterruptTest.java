@@ -1,4 +1,4 @@
-package test.interrupt;
+package test.concurrent.thread.interrupt;
 
 public class InterruptTest {
 

@@ -1,4 +1,4 @@
-package test.countdown;
+package test.concurrent.countdown;
 
 import java.util.concurrent.locks.*;
 

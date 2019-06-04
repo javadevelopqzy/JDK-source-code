@@ -1,4 +1,4 @@
-package test.semaphore;
+package test.concurrent.semaphore;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
