@@ -35,7 +35,6 @@ public class SocketClient {
 				byte[] b = new byte[50];
 				inputStream.read(b);
 				System.out.println(new String(b));
-
 				socket.close();
 			} catch (IOException | InterruptedException | BrokenBarrierException e) {
 				e.printStackTrace();
